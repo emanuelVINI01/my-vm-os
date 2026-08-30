@@ -1,0 +1,307 @@
+// =========================================================
+// APLICATIVO: CALCULADORA - Zorin VM OS
+// Calculadora científica estilo GNOME Calculator
+// =========================================================
+import "../drivers/vga.cvm";
+
+// Estado da calculadora
+int calc_display_val = 0;
+int calc_prev_val = 0;
+int calc_op = 0;        // 0=none, 1=+, 2=-, 3=*, 4=/, 5=%
+int calc_new_num = 1;   // 1 = próximo dígito inicia novo número
+int calc_has_result = 0;
+
+// Buffer de display
+int[12] calc_display_buf;
+int calc_display_len = 0;
+int calc_negative = 0;
+
+int calc_x = 0;
+int calc_y = 0;
+int calc_w = 320;
+int calc_h = 420;
+
+void calc_init(int x, int y, int w, int h) {
+    calc_x = x;
+    calc_y = y;
+    calc_w = w;
+    calc_h = h;
+    calc_display_val = 0;
+    calc_prev_val = 0;
+    calc_op = 0;
+    calc_new_num = 1;
+    calc_display_len = 0;
+    calc_negative = 0;
+}
+
+void calc_update_display(int val) {
+    calc_display_val = val;
+    // Converte para string
+    if (val == 0) {
+        calc_display_buf[0] = 48;
+        calc_display_len = 1;
+        calc_negative = 0;
+        return;
+    }
+    
+    int n = val;
+    calc_negative = 0;
+    calc_display_len = 0;
+    int[12] tmp;
+    int tlen = 0;
+    
+    while (n != 0) {
+        int d = n % 10;
+        if (d < 0) { d = 0 - d; }
+        tmp[tlen] = d + 48;
+        tlen = tlen + 1;
+        n = n / 10;
+    }
+    
+    // Inverte
+    calc_display_len = tlen;
+    for (int i = 0; i < tlen; i = i + 1) {
+        calc_display_buf[i] = tmp[tlen - 1 - i];
+    }
+}
+
+// Desenha um botão da calculadora
+void calc_draw_button(int bx, int by, int bw, int bh, int label, int fg, int bg) {
+    gui_fill_round_rect(bx, by, bw, bh, 6, bg);
+    gui_draw_rect(bx, by, bw, bh, 0xFF2A2A3E);
+    // Centraliza o caractere
+    int lx = bx + (bw - 8) / 2;
+    int ly = by + (bh - 16) / 2;
+    gui_draw_char(lx, ly, label, fg, 0);
+}
+
+// Layout dos botões: 4 colunas x 5 linhas
+// Linha 0: 7 8 9 /
+// Linha 1: 4 5 6 *
+// Linha 2: 1 2 3 -
+// Linha 3: 0 . = +
+// Linha 4: C +/- % DEL
+
+void calc_render() {
+    int bx = calc_x;
+    int by = calc_y;
+    int bw = calc_w;
+    int bh = calc_h;
+    
+    // Fundo
+    gui_fill_round_rect(bx, by, bw, bh, 10, 0xFF1A1A2E);
+    gui_draw_rect(bx, by, bw, bh, COLOR_ACCENT);
+    
+    // Display
+    int disp_y = by + 10;
+    gui_fill_round_rect((bx + 8), disp_y, (bw - 16), 60, 8, 0xFF0D0D1A);
+    
+    // Valor no display (alinhado à direita)
+    int val_x = bx + bw - 16 - calc_display_len * 12;
+    int val_y = disp_y + 22;
+    
+    if (calc_negative == 1) {
+        gui_draw_char((val_x - 12), val_y, 45, COLOR_WHITE, 0); // '-'
+    }
+    
+    for (int i = 0; i < calc_display_len; i = i + 1) {
+        // Dígitos maiores (12px wide simulado por espaçamento maior)
+        gui_draw_char((val_x + i * 12), val_y, calc_display_buf[i], COLOR_WHITE, 0);
+    }
+    
+    // Operação atual no display
+    if (calc_op == 1) { gui_draw_char((bx + 14), (disp_y + 8), 43, COLOR_TEXT_DIM, 0); } // +
+    if (calc_op == 2) { gui_draw_char((bx + 14), (disp_y + 8), 45, COLOR_TEXT_DIM, 0); } // -
+    if (calc_op == 3) { gui_draw_char((bx + 14), (disp_y + 8), 42, COLOR_TEXT_DIM, 0); } // *
+    if (calc_op == 4) { gui_draw_char((bx + 14), (disp_y + 8), 47, COLOR_TEXT_DIM, 0); } // /
+    
+    // Botões
+    int btn_start_y = by + 82;
+    int btn_w = (bw - 16) / 4;
+    int btn_h = 48;
+    int gap = 4;
+    
+    // Cores dos botões
+    int color_num  = 0xFF252540;   // Números
+    int color_op   = COLOR_ACCENT; // Operadores
+    int color_fn   = 0xFF302044;   // Funções
+    int color_eq   = COLOR_ACCENT2; // Igual
+    
+    // Linha 0: C +/- % DEL
+    int row = 0;
+    calc_draw_button(bx + 4 + 0*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 67, COLOR_WHITE, color_fn); // C
+    calc_draw_button(bx + 4 + 1*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 177, COLOR_WHITE, color_fn); // +/-  (±)
+    calc_draw_button(bx + 4 + 2*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 37, COLOR_WHITE, color_fn); // %
+    calc_draw_button(bx + 4 + 3*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 60, COLOR_WHITE, color_op); // < (DEL)
+    
+    // Linha 1: 7 8 9 /
+    row = 1;
+    calc_draw_button(bx + 4 + 0*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 55, COLOR_WHITE, color_num); // 7
+    calc_draw_button(bx + 4 + 1*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 56, COLOR_WHITE, color_num); // 8
+    calc_draw_button(bx + 4 + 2*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 57, COLOR_WHITE, color_num); // 9
+    calc_draw_button(bx + 4 + 3*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 47, COLOR_WHITE, color_op); // /
+    
+    // Linha 2: 4 5 6 *
+    row = 2;
+    calc_draw_button(bx + 4 + 0*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 52, COLOR_WHITE, color_num); // 4
+    calc_draw_button(bx + 4 + 1*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 53, COLOR_WHITE, color_num); // 5
+    calc_draw_button(bx + 4 + 2*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 54, COLOR_WHITE, color_num); // 6
+    calc_draw_button(bx + 4 + 3*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 42, COLOR_WHITE, color_op); // *
+    
+    // Linha 3: 1 2 3 -
+    row = 3;
+    calc_draw_button(bx + 4 + 0*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 49, COLOR_WHITE, color_num); // 1
+    calc_draw_button(bx + 4 + 1*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 50, COLOR_WHITE, color_num); // 2
+    calc_draw_button(bx + 4 + 2*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 51, COLOR_WHITE, color_num); // 3
+    calc_draw_button(bx + 4 + 3*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 45, COLOR_WHITE, color_op); // -
+    
+    // Linha 4: 0 . = +
+    row = 4;
+    calc_draw_button(bx + 4 + 0*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 48, COLOR_WHITE, color_num); // 0
+    calc_draw_button(bx + 4 + 1*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 46, COLOR_WHITE, color_num); // .
+    calc_draw_button(bx + 4 + 2*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 61, COLOR_WHITE, color_eq); // =
+    calc_draw_button(bx + 4 + 3*(btn_w+gap), btn_start_y + row*(btn_h+gap), btn_w, btn_h, 43, COLOR_WHITE, color_op); // +
+}
+
+// Processa clique em botão da calculadora
+void calc_handle_click(int mx, int my) {
+    int btn_start_y = calc_y + 82;
+    int btn_w = (calc_w - 16) / 4;
+    int btn_h = 48;
+    int gap = 4;
+    
+    for (int row = 0; row < 5; row = row + 1) {
+        for (int col = 0; col < 4; col = col + 1) {
+            int bx = calc_x + 4 + col * (btn_w + gap);
+            int by = btn_start_y + row * (btn_h + gap);
+            if (gui_point_in_rect(mx, my, bx, by, btn_w, btn_h) == 1) {
+                calc_process_button(row, col);
+            }
+        }
+    }
+}
+
+void calc_process_button(int row, int col) {
+    // Linha 0: C +/- % DEL
+    if (row == 0) {
+        if (col == 0) { // C - Clear
+            calc_display_val = 0;
+            calc_prev_val = 0;
+            calc_op = 0;
+            calc_new_num = 1;
+            calc_update_display(0);
+        }
+        if (col == 1) { // +/-
+            calc_display_val = 0 - calc_display_val;
+            calc_update_display(calc_display_val);
+        }
+        if (col == 2) { // %
+            calc_display_val = calc_display_val / 100;
+            calc_update_display(calc_display_val);
+        }
+        if (col == 3) { // DEL
+            if (calc_display_len > 1) {
+                calc_display_len = calc_display_len - 1;
+                calc_display_buf[calc_display_len] = 0;
+                // Reconstrói valor
+                int v = 0;
+                for (int i = 0; i < calc_display_len; i = i + 1) {
+                    v = v * 10 + (calc_display_buf[i] - 48);
+                }
+                calc_display_val = v;
+            } else {
+                calc_display_val = 0;
+                calc_update_display(0);
+            }
+        }
+        return;
+    }
+    
+    // Mapeia row/col para dígito ou operação
+    // row=1: 7 8 9 /
+    // row=2: 4 5 6 *
+    // row=3: 1 2 3 -
+    // row=4: 0 . = +
+    
+    if (col < 3) { // Dígitos
+        int digit = 0;
+        if (row == 1) { digit = 7 + col; }
+        if (row == 2) { digit = 4 + col; }
+        if (row == 3) { digit = 1 + col; }
+        if (row == 4 && col == 0) { digit = 0; }
+        
+        if (calc_new_num == 1) {
+            calc_display_val = digit;
+            calc_new_num = 0;
+        } else {
+            calc_display_val = calc_display_val * 10 + digit;
+        }
+        calc_update_display(calc_display_val);
+        return;
+    }
+    
+    if (col == 3) { // Operações e igual
+        if (row == 4) { // = (calcular)
+            if (calc_op == 1) { calc_display_val = calc_prev_val + calc_display_val; }
+            if (calc_op == 2) { calc_display_val = calc_prev_val - calc_display_val; }
+            if (calc_op == 3) { calc_display_val = calc_prev_val * calc_display_val; }
+            if (calc_op == 4) { 
+                if (calc_display_val != 0) {
+                    calc_display_val = calc_prev_val / calc_display_val;
+                }
+            }
+            calc_update_display(calc_display_val);
+            calc_op = 0;
+            calc_new_num = 1;
+        } else { // Operadores
+            calc_prev_val = calc_display_val;
+            if (row == 1) { calc_op = 4; } // /
+            if (row == 2) { calc_op = 3; } // *
+            if (row == 3) { calc_op = 2; } // -
+            if (row == 4) { calc_op = 1; } // +
+            calc_new_num = 1;
+        }
+    }
+}
+
+// Lida com teclas do teclado na calculadora
+void calc_handle_key(int key) {
+    if (key >= 48 && key <= 57) { // 0-9
+        int digit = key - 48;
+        if (calc_new_num == 1) {
+            calc_display_val = digit;
+            calc_new_num = 0;
+        } else {
+            calc_display_val = calc_display_val * 10 + digit;
+        }
+        calc_update_display(calc_display_val);
+    }
+    if (key == 43) { calc_prev_val = calc_display_val; calc_op = 1; calc_new_num = 1; } // +
+    if (key == 45) { calc_prev_val = calc_display_val; calc_op = 2; calc_new_num = 1; } // -
+    if (key == 42) { calc_prev_val = calc_display_val; calc_op = 3; calc_new_num = 1; } // *
+    if (key == 47) { calc_prev_val = calc_display_val; calc_op = 4; calc_new_num = 1; } // /
+    if (key == 10) { // Enter = =
+        if (calc_op == 1) { calc_display_val = calc_prev_val + calc_display_val; }
+        if (calc_op == 2) { calc_display_val = calc_prev_val - calc_display_val; }
+        if (calc_op == 3) { calc_display_val = calc_prev_val * calc_display_val; }
+        if (calc_op == 4 && calc_display_val != 0) { calc_display_val = calc_prev_val / calc_display_val; }
+        calc_update_display(calc_display_val);
+        calc_op = 0;
+        calc_new_num = 1;
+    }
+    if (key == 8) { // Backspace
+        if (calc_display_len > 1) {
+            calc_display_len = calc_display_len - 1;
+        } else {
+            calc_display_val = 0;
+            calc_update_display(0);
+        }
+    }
+    if (key == 27) { // Esc = clear
+        calc_display_val = 0;
+        calc_prev_val = 0;
+        calc_op = 0;
+        calc_new_num = 1;
+        calc_update_display(0);
+    }
+}

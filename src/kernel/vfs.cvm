@@ -1,0 +1,107 @@
+// ---------------------------------------------------------
+// VIRTUAL FILE SYSTEM (VFS) IN RAM
+// ---------------------------------------------------------
+import "../drivers/vga.cvm";
+
+*int VFS_START = 2097152; // 0x200000
+int MAX_FILES = 32;
+int NAME_MAX_LEN = 15;
+
+// Layout da memória do VFS
+// [0]: num_files
+// [1]: next_free_block
+// [2..2+32*18]: FileEntry (15 ints name + 1 int name_len + 1 int size + 1 int data_ptr)
+
+int vfs_strcmp(*int s1, int l1, *int s2, int l2) {
+    if (l1 != l2) {
+        return 0;
+    }
+    for (int i = 0; i < l1; i = i + 1) {
+        if (s1[i] != s2[i]) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+void vfs_init() {
+    VFS_START[0] = 0; // num_files = 0
+    VFS_START[1] = 2097152 + 2 + (MAX_FILES * 18); // next_free_block = final do header
+}
+
+int vfs_find_file(*int name, int name_len) {
+    int num_files = VFS_START[0];
+    for (int i = 0; i < num_files; i = i + 1) {
+        int entry_base = 2 + (i * 18);
+        int entry_name_len = VFS_START[entry_base + 15];
+        if (vfs_strcmp(name, name_len, VFS_START + entry_base, entry_name_len) == 1) {
+            return i;
+        }
+    }
+    return 0 - 1;
+}
+
+int vfs_create(*int name, int name_len) {
+    if (vfs_find_file(name, name_len) != 0 - 1) {
+        return 0 - 1; // Arquivo ja existe
+    }
+    
+    int num_files = VFS_START[0];
+    if (num_files > MAX_FILES - 1) {
+        return 0 - 2; // Limite de arquivos
+    }
+    
+    int entry_base = 2 + (num_files * 18);
+    for (int i = 0; i < name_len; i = i + 1) {
+        VFS_START[entry_base + i] = name[i];
+    }
+    VFS_START[entry_base + 15] = name_len;
+    VFS_START[entry_base + 16] = 0; // size = 0
+    VFS_START[entry_base + 17] = VFS_START[1]; // data_ptr = next_free_block
+    
+    VFS_START[0] = num_files + 1;
+    return num_files;
+}
+
+void vfs_write(int file_idx, *int data, int data_len) {
+    int entry_base = 2 + (file_idx * 18);
+    int data_ptr = VFS_START[entry_base + 17];
+    
+    *int data_mem = data_ptr;
+    for (int i = 0; i < data_len; i = i + 1) {
+        data_mem[i] = data[i];
+    }
+    VFS_START[entry_base + 16] = data_len; // atualiza size
+    
+    int end_ptr = data_ptr + data_len;
+    if (end_ptr > VFS_START[1]) {
+        VFS_START[1] = end_ptr; // Avanca next_free_block
+    }
+}
+
+int vfs_read(int file_idx, *int out_buffer) {
+    int entry_base = 2 + (file_idx * 18);
+    int data_len = VFS_START[entry_base + 16];
+    int data_ptr = VFS_START[entry_base + 17];
+    
+    *int data_mem = data_ptr;
+    for (int i = 0; i < data_len; i = i + 1) {
+        out_buffer[i] = data_mem[i];
+    }
+    return data_len;
+}
+
+void vfs_list() {
+    int num_files = VFS_START[0];
+    for (int i = 0; i < num_files; i = i + 1) {
+        int entry_base = 2 + (i * 18);
+        int name_len = VFS_START[entry_base + 15];
+        for (int j = 0; j < name_len; j = j + 1) {
+            vga_print_char(VFS_START[entry_base + j]);
+        }
+        vga_print_char(32); // Espaço
+    }
+    if (num_files > 0) {
+        vga_print_char(10); // \n
+    }
+}

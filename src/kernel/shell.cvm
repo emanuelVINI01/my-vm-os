@@ -1,0 +1,172 @@
+// ---------------------------------------------------------
+// OS SHELL (BASH-LIKE)
+// ---------------------------------------------------------
+import "../drivers/vga.cvm";
+import "../drivers/keyboard.cvm";
+import "vfs.cvm";
+
+int[100] shell_buffer;
+int shell_buffer_len = 0;
+
+void print_prompt() {
+    vga_print_char(62); // >
+    vga_print_char(32); // Espaço
+}
+
+void print_string(*int str, int len) {
+    for (int i = 0; i < len; i = i + 1) {
+        vga_print_char(str[i]);
+    }
+}
+
+void execute_command() {
+    // Para simplificar, o primeiro token vai ate o primeiro espaco
+    int space_idx = 0 - 1;
+    for (int i = 0; i < shell_buffer_len; i = i + 1) {
+        if (shell_buffer[i] == 32) {
+            space_idx = i;
+            i = shell_buffer_len; // break
+        }
+    }
+    
+    int cmd_len = shell_buffer_len;
+    if (space_idx != 0 - 1) {
+        cmd_len = space_idx;
+    }
+    
+    // Comando 'help' (104, 101, 108, 112)
+    int[4] cmd_help;
+    cmd_help[0] = 104; cmd_help[1] = 101; cmd_help[2] = 108; cmd_help[3] = 112;
+    if (vfs_strcmp(shell_buffer, cmd_len, cmd_help, 4) == 1) {
+        int[45] help_msg;
+        // "Comandos: help, clear, ls, touch, write, cat"
+        // H = 67, o=111, m=109, a=97, n=110, d=100, o=111, s=115, :=58
+        vga_print_char(67); vga_print_char(111); vga_print_char(109);
+        vga_print_char(97); vga_print_char(110); vga_print_char(100);
+        vga_print_char(111); vga_print_char(115); vga_print_char(58);
+        vga_print_char(32);
+        
+        vga_print_char(104); vga_print_char(101); vga_print_char(108); vga_print_char(112); vga_print_char(44); vga_print_char(32);
+        vga_print_char(99); vga_print_char(108); vga_print_char(101); vga_print_char(97); vga_print_char(114); vga_print_char(44); vga_print_char(32);
+        vga_print_char(108); vga_print_char(115); vga_print_char(44); vga_print_char(32);
+        vga_print_char(116); vga_print_char(111); vga_print_char(117); vga_print_char(99); vga_print_char(104); vga_print_char(44); vga_print_char(32);
+        vga_print_char(119); vga_print_char(114); vga_print_char(105); vga_print_char(116); vga_print_char(101); vga_print_char(44); vga_print_char(32);
+        vga_print_char(99); vga_print_char(97); vga_print_char(116);
+        vga_print_char(10);
+        return;
+    }
+    
+    // Comando 'clear' (99, 108, 101, 97, 114)
+    int[5] cmd_clear;
+    cmd_clear[0] = 99; cmd_clear[1] = 108; cmd_clear[2] = 101; cmd_clear[3] = 97; cmd_clear[4] = 114;
+    if (vfs_strcmp(shell_buffer, cmd_len, cmd_clear, 5) == 1) {
+        vga_clear_screen();
+        return;
+    }
+    
+    // Comando 'ls' (108, 115)
+    int[2] cmd_ls;
+    cmd_ls[0] = 108; cmd_ls[1] = 115;
+    if (vfs_strcmp(shell_buffer, cmd_len, cmd_ls, 2) == 1) {
+        vfs_list();
+        return;
+    }
+    
+    // Comando 'touch' (116, 111, 117, 99, 104)
+    int[5] cmd_touch;
+    cmd_touch[0] = 116; cmd_touch[1] = 111; cmd_touch[2] = 117; cmd_touch[3] = 99; cmd_touch[4] = 104;
+    if (vfs_strcmp(shell_buffer, cmd_len, cmd_touch, 5) == 1) {
+        if (space_idx != 0 - 1) {
+            int name_len = shell_buffer_len - space_idx - 1;
+            int r = vfs_create(shell_buffer + space_idx + 1, name_len);
+            if (r < 0) {
+                vga_print_char(69); vga_print_char(114); vga_print_char(114); vga_print_char(111); vga_print_char(10);
+            }
+        }
+        return;
+    }
+    
+    // Comando 'cat' (99, 97, 116)
+    int[3] cmd_cat;
+    cmd_cat[0] = 99; cmd_cat[1] = 97; cmd_cat[2] = 116;
+    if (vfs_strcmp(shell_buffer, cmd_len, cmd_cat, 3) == 1) {
+        if (space_idx != 0 - 1) {
+            int name_len = shell_buffer_len - space_idx - 1;
+            int fd = vfs_find_file(shell_buffer + space_idx + 1, name_len);
+            if (fd != 0 - 1) {
+                int[1024] buf;
+                int sz = vfs_read(fd, buf);
+                print_string(buf, sz);
+                vga_print_char(10);
+            } else {
+                vga_print_char(69); vga_print_char(114); vga_print_char(114); vga_print_char(111); vga_print_char(10);
+            }
+        }
+        return;
+    }
+    
+    // Comando 'write' (119, 114, 105, 116, 101)
+    int[5] cmd_write;
+    cmd_write[0] = 119; cmd_write[1] = 114; cmd_write[2] = 105; cmd_write[3] = 116; cmd_write[4] = 101;
+    if (vfs_strcmp(shell_buffer, cmd_len, cmd_write, 5) == 1) {
+        if (space_idx != 0 - 1) {
+            // Acha o segundo espaço
+            int space_idx2 = 0 - 1;
+            for (int i = space_idx + 1; i < shell_buffer_len; i = i + 1) {
+                if (shell_buffer[i] == 32) {
+                    space_idx2 = i;
+                    i = shell_buffer_len;
+                }
+            }
+            if (space_idx2 != 0 - 1) {
+                int name_len = space_idx2 - space_idx - 1;
+                int fd = vfs_find_file(shell_buffer + space_idx + 1, name_len);
+                if (fd != 0 - 1) {
+                    int content_len = shell_buffer_len - space_idx2 - 1;
+                    vfs_write(fd, shell_buffer + space_idx2 + 1, content_len);
+                } else {
+                    vga_print_char(69); vga_print_char(114); vga_print_char(114); vga_print_char(111); vga_print_char(10);
+                }
+            }
+        }
+        return;
+    }
+    
+    vga_print_char(63); // ?
+    vga_print_char(10);
+}
+
+void shell_loop() {
+    print_prompt();
+    while (1 == 1) {
+        int key = pop_key();
+        if (key != 0) {
+            if (key == 10) { // Enter
+                vga_print_char(10);
+                if (shell_buffer_len > 0) {
+                    execute_command();
+                }
+                shell_buffer_len = 0;
+                print_prompt();
+            } else {
+                if (key == 8) { // Backspace
+                    if (shell_buffer_len > 0) {
+                        shell_buffer_len = shell_buffer_len - 1;
+                        // Apaga da tela
+                        cursor_x = cursor_x - 1;
+                        int pos = cursor_y * VGA_WIDTH + cursor_x;
+                        VGA_BUFFER[pos] = 32;
+                        vga_update_cursor();
+                    }
+                } else {
+                    if (shell_buffer_len < 100) {
+                        shell_buffer[shell_buffer_len] = key;
+                        shell_buffer_len = shell_buffer_len + 1;
+                        vga_print_char(key);
+                    }
+                }
+            }
+        }
+        asm { "YIELD" }
+    }
+}

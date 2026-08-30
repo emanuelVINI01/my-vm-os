@@ -1,0 +1,209 @@
+// =========================================================
+// APLICATIVO: GERENCIADOR DE ARQUIVOS - Zorin VM OS
+// Navegador de arquivos com ícones e VFS
+// =========================================================
+import "../drivers/vga.cvm";
+import "../kernel/vfs.cvm";
+
+int files_x = 0;
+int files_y = 0;
+int files_w = 600;
+int files_h = 400;
+int files_selected = 0 - 1;
+int files_scroll = 0;
+
+void files_init(int x, int y, int w, int h) {
+    files_x = x;
+    files_y = y;
+    files_w = w;
+    files_h = h;
+    files_selected = 0 - 1;
+    files_scroll = 0;
+}
+
+// Desenha ícone de arquivo
+void files_draw_file_icon(int x, int y, int selected) {
+    int bg = 0;
+    if (selected == 1) {
+        gui_fill_round_rect(x, y, 64, 72, 6, COLOR_ACCENT);
+    }
+    // Papel
+    gui_fill_rect((x+8), (y+4), 40, 52, COLOR_WHITE);
+    // Canto dobrado
+    gui_fill_rect((x+36), (y+4), 12, 12, 0xFFDDDDDD);
+    gui_draw_line((x+36), (y+4), (x+36), (y+16), COLOR_GRAY);
+    gui_draw_line((x+36), (y+16), (x+48), (y+16), COLOR_GRAY);
+    // Linhas de texto simuladas
+    gui_fill_rect((x+12), (y+22), 24, 2, COLOR_LIGHT_GRAY);
+    gui_fill_rect((x+12), (y+28), 28, 2, COLOR_LIGHT_GRAY);
+    gui_fill_rect((x+12), (y+34), 20, 2, COLOR_LIGHT_GRAY);
+}
+
+// Desenha ícone de pasta
+void files_draw_folder_icon(int x, int y, int selected) {
+    if (selected == 1) {
+        gui_fill_round_rect(x, y, 64, 72, 6, COLOR_ACCENT);
+    }
+    gui_fill_round_rect((x+4), (y+20), 56, 36, 4, COLOR_ORANGE);
+    gui_fill_rect((x+4), (y+12), 24, 12, COLOR_ORANGE);
+    gui_fill_round_rect((x+4), (y+20), 56, 36, 4, COLOR_YELLOW);
+}
+
+// Renderiza o gerenciador de arquivos
+void files_render() {
+    // Fundo
+    gui_fill_rect(files_x, files_y, files_w, files_h, 0xFF1A1A2A);
+    
+    // Sidebar esquerda
+    int sidebar_w = 150;
+    gui_fill_rect(files_x, files_y, sidebar_w, files_h, 0xFF141422);
+    gui_draw_line((files_x + sidebar_w), files_y, (files_x + sidebar_w), (files_y + files_h), COLOR_DARK_GRAY);
+    
+    // Itens da sidebar
+    int sy = files_y + 8;
+    
+    // Home
+    gui_fill_round_rect((files_x + 4), sy, (sidebar_w - 8), 28, 6, 0xFF1E1E30);
+    gui_draw_char((files_x + 12), (sy + 6), 72, COLOR_WHITE, 0); // H
+    gui_draw_char((files_x + 20), (sy + 6), 111, COLOR_WHITE, 0); // o
+    gui_draw_char((files_x + 28), (sy + 6), 109, COLOR_WHITE, 0); // m
+    gui_draw_char((files_x + 36), (sy + 6), 101, COLOR_WHITE, 0); // e
+    sy = sy + 34;
+    
+    // Documents
+    gui_draw_char((files_x + 12), (sy + 6), 68, COLOR_TEXT_DIM, 0); // D
+    gui_draw_char((files_x + 20), (sy + 6), 111, COLOR_TEXT_DIM, 0); // o
+    gui_draw_char((files_x + 28), (sy + 6), 99, COLOR_TEXT_DIM, 0); // c
+    gui_draw_char((files_x + 36), (sy + 6), 115, COLOR_TEXT_DIM, 0); // s
+    sy = sy + 28;
+    
+    // VFS Files
+    gui_draw_char((files_x + 12), (sy + 6), 70, COLOR_TEXT_DIM, 0); // F
+    gui_draw_char((files_x + 20), (sy + 6), 105, COLOR_TEXT_DIM, 0); // i
+    gui_draw_char((files_x + 28), (sy + 6), 108, COLOR_TEXT_DIM, 0); // l
+    gui_draw_char((files_x + 36), (sy + 6), 101, COLOR_TEXT_DIM, 0); // e
+    gui_draw_char((files_x + 44), (sy + 6), 115, COLOR_TEXT_DIM, 0); // s
+    sy = sy + 28;
+    
+    // Separador
+    gui_draw_line((files_x + 8), sy, (files_x + sidebar_w - 8), sy, COLOR_DARK_GRAY);
+    sy = sy + 12;
+    
+    // Trash
+    gui_draw_char((files_x + 12), (sy + 6), 84, COLOR_ACCENT2, 0); // T
+    gui_draw_char((files_x + 20), (sy + 6), 114, COLOR_ACCENT2, 0); // r
+    gui_draw_char((files_x + 28), (sy + 6), 97, COLOR_ACCENT2, 0); // a
+    gui_draw_char((files_x + 36), (sy + 6), 115, COLOR_ACCENT2, 0); // s
+    gui_draw_char((files_x + 44), (sy + 6), 104, COLOR_ACCENT2, 0); // h
+    
+    // Área de conteúdo
+    int content_x = files_x + sidebar_w + 4;
+    int content_y = files_y + 4;
+    int content_w = files_w - sidebar_w - 8;
+    int content_h = files_h - 8;
+    
+    // Barra de endereço
+    gui_fill_round_rect(content_x, content_y, content_w, 26, 6, 0xFF0D0D1A);
+    // "/" inicial
+    gui_draw_char((content_x + 8), (content_y + 5), 47, COLOR_TEXT_DIM, 0);    // /
+    gui_draw_char((content_x + 16), (content_y + 5), 72, COLOR_WHITE, 0);       // H
+    gui_draw_char((content_x + 24), (content_y + 5), 111, COLOR_WHITE, 0);      // o
+    gui_draw_char((content_x + 32), (content_y + 5), 109, COLOR_WHITE, 0);      // m
+    gui_draw_char((content_x + 40), (content_y + 5), 101, COLOR_WHITE, 0);      // e
+    
+    // Grid de arquivos do VFS
+    int grid_x = content_x;
+    int grid_y = content_y + 34;
+    int item_w = 80;
+    int item_h = 90;
+    int cols = content_w / item_w;
+    
+    // Pasta padrão "Home"
+    files_draw_folder_icon(grid_x, grid_y, 0);
+    // "Home" label
+    gui_draw_char((grid_x + 22), (grid_y + 74), 72, COLOR_WHITE, 0);
+    gui_draw_char((grid_x + 30), (grid_y + 74), 111, COLOR_WHITE, 0);
+    gui_draw_char((grid_x + 38), (grid_y + 74), 109, COLOR_WHITE, 0);
+    gui_draw_char((grid_x + 46), (grid_y + 74), 101, COLOR_WHITE, 0);
+    
+    // Pasta "Documents"
+    files_draw_folder_icon(grid_x + item_w, grid_y, 0);
+    gui_draw_char((grid_x + item_w + 12), (grid_y + 74), 68, COLOR_WHITE, 0);
+    gui_draw_char((grid_x + item_w + 20), (grid_y + 74), 111, COLOR_WHITE, 0);
+    gui_draw_char((grid_x + item_w + 28), (grid_y + 74), 99, COLOR_WHITE, 0);
+    gui_draw_char((grid_x + item_w + 36), (grid_y + 74), 115, COLOR_WHITE, 0);
+    
+    // Arquivos do VFS
+    int num_files = VFS_START[0];
+    int col = 2;
+    int row = 0;
+    
+    for (int i = 0; i < num_files; i = i + 1) {
+        int entry_base = 2 + (i * 18);
+        int name_len = VFS_START[entry_base + 15];
+        
+        int fx = grid_x + col * item_w;
+        int fy = grid_y + row * item_h;
+        
+        int sel = 0;
+        if (i == files_selected) { sel = 1; }
+        files_draw_file_icon(fx, fy, sel);
+        
+        // Nome do arquivo (truncado)
+        int name_start = fx;
+        int show_len = name_len;
+        if (show_len > 7) { show_len = 7; }
+        for (int j = 0; j < show_len; j = j + 1) {
+            gui_draw_char((name_start + j * 8), (fy + 74), VFS_START[entry_base + j], COLOR_WHITE, 0);
+        }
+        
+        col = col + 1;
+        if (col >= cols) {
+            col = 0;
+            row = row + 1;
+        }
+    }
+    
+    // Barra de status inferior
+    int status_y2 = files_y + files_h - 24;
+    gui_fill_rect(files_x, status_y2, files_w, 24, COLOR_PANEL);
+    gui_draw_line(files_x, status_y2, (files_x + files_w), status_y2, COLOR_DARK_GRAY);
+    
+    // Mostra count de arquivos
+    // "N items"
+    int n = num_files + 2; // +2 pelas pastas padrão
+    gui_draw_char((files_x + sidebar_w + 8), (status_y2 + 4), (n + 48), COLOR_TEXT_DIM, 0);
+    gui_draw_char((files_x + sidebar_w + 16), (status_y2 + 4), 32, COLOR_TEXT_DIM, 0);
+    gui_draw_char((files_x + sidebar_w + 24), (status_y2 + 4), 105, COLOR_TEXT_DIM, 0); // i
+    gui_draw_char((files_x + sidebar_w + 32), (status_y2 + 4), 116, COLOR_TEXT_DIM, 0); // t
+    gui_draw_char((files_x + sidebar_w + 40), (status_y2 + 4), 101, COLOR_TEXT_DIM, 0); // e
+    gui_draw_char((files_x + sidebar_w + 48), (status_y2 + 4), 109, COLOR_TEXT_DIM, 0); // m
+    gui_draw_char((files_x + sidebar_w + 56), (status_y2 + 4), 115, COLOR_TEXT_DIM, 0); // s
+}
+
+// Lida com clique no gerenciador de arquivos
+void files_handle_click(int mx, int my) {
+    int sidebar_w = 150;
+    int content_x = files_x + sidebar_w + 4;
+    int content_y = files_y + 38;
+    int item_w = 80;
+    int item_h = 90;
+    int content_w = files_w - sidebar_w - 8;
+    int cols = content_w / item_w;
+    
+    int num_files = VFS_START[0];
+    int col = 2;
+    int row = 0;
+    
+    for (int i = 0; i < num_files; i = i + 1) {
+        int fx = content_x + col * item_w;
+        int fy = content_y + row * item_h;
+        
+        if (gui_point_in_rect(mx, my, fx, fy, item_w, item_h) == 1) {
+            files_selected = i;
+        }
+        
+        col = col + 1;
+        if (col >= cols) { col = 0; row = row + 1; }
+    }
+}

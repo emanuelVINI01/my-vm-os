@@ -1,0 +1,513 @@
+// =========================================================
+// ZORIN VM OS - Sistema Operacional Principal
+// main.cvm - Ponto de entrada e loop principal do OS
+// =========================================================
+
+import "drivers/vga.cvm";
+import "drivers/keyboard.cvm";
+import "kernel/vfs.cvm";
+import "kernel/wm.cvm";
+import "kernel/taskbar.cvm";
+import "kernel/desktop.cvm";
+import "apps/terminal.cvm";
+import "apps/editor.cvm";
+import "apps/calculator.cvm";
+import "apps/files.cvm";
+
+// =========================================================
+// Estado global do OS
+// =========================================================
+
+// Títulos das janelas (armazenados na RAM)
+*int TITLE_TERMINAL = 5200000;
+*int TITLE_EDITOR   = 5200020;
+*int TITLE_CALC     = 5200040;
+*int TITLE_FILES    = 5200060;
+
+// Índices das janelas abertas
+int win_terminal = 0 - 1;
+int win_editor   = 0 - 1;
+int win_calc     = 0 - 1;
+int win_files    = 0 - 1;
+
+// Contadores de frame para animações
+int frame_counter = 0;
+int need_redraw = 1;
+
+// Mouse state
+int prev_mouse_btn = 0;
+int mouse_btn = 0;
+int mouse_x = 0;
+int mouse_y = 0;
+int mouse_click = 0;
+
+// Timer interrupt handler (32)
+interrupt void timer_interrupt_handler() {
+    frame_counter = frame_counter + 1;
+    asm { "OUT 980, {frame_counter}" }  // Exporta frame counter via IO port 980
+}
+
+// Keyboard interrupt handler (33)
+interrupt void keyboard_interrupt_handler_main() {
+    int raw_scancode = 0;
+    asm { "IN {raw_scancode}, 96" }
+    
+    int is_release = 0;
+    if (raw_scancode > 127) {
+        is_release = 1;
+        raw_scancode = raw_scancode - 128;
+    }
+    
+    // Shift keys
+    if (raw_scancode == 82 || raw_scancode == 83) {
+        if (is_release == 1) { shift_pressed = 0; } else { shift_pressed = 1; }
+        return;
+    }
+    
+    // Ctrl
+    if (raw_scancode == 70 || raw_scancode == 71) {
+        if (is_release == 1) { ctrl_pressed = 0; } else { ctrl_pressed = 1; }
+        return;
+    }
+    
+    // Alt
+    if (raw_scancode == 68 || raw_scancode == 69) {
+        if (is_release == 1) { alt_pressed = 0; } else { alt_pressed = 1; }
+        return;
+    }
+    
+    if (is_release == 0) {
+        int ascii = map_scancode_to_ascii(raw_scancode);
+        if (ascii != 0) {
+            push_key(ascii);
+        }
+    }
+}
+
+// Alt+Tab handler (34)
+interrupt void alt_tab_handler() {
+    wm_alt_tab();
+    need_redraw = 1;
+}
+
+void register_interrupt(int num, *void handler_ptr) {
+    *int addr = num;
+    addr[0] = handler_ptr;
+}
+
+// Inicializa títulos das janelas
+void init_window_titles() {
+    // "Terminal"
+    TITLE_TERMINAL[0]=84; TITLE_TERMINAL[1]=101; TITLE_TERMINAL[2]=114;
+    TITLE_TERMINAL[3]=109; TITLE_TERMINAL[4]=105; TITLE_TERMINAL[5]=110;
+    TITLE_TERMINAL[6]=97; TITLE_TERMINAL[7]=108;
+    
+    // "Text Editor"
+    TITLE_EDITOR[0]=84; TITLE_EDITOR[1]=101; TITLE_EDITOR[2]=120;
+    TITLE_EDITOR[3]=116; TITLE_EDITOR[4]=32; TITLE_EDITOR[5]=69;
+    TITLE_EDITOR[6]=100; TITLE_EDITOR[7]=105; TITLE_EDITOR[8]=116;
+    TITLE_EDITOR[9]=111; TITLE_EDITOR[10]=114;
+    
+    // "Calculator"
+    TITLE_CALC[0]=67; TITLE_CALC[1]=97; TITLE_CALC[2]=108;
+    TITLE_CALC[3]=99; TITLE_CALC[4]=117; TITLE_CALC[5]=108;
+    TITLE_CALC[6]=97; TITLE_CALC[7]=116; TITLE_CALC[8]=111;
+    TITLE_CALC[9]=114;
+    
+    // "File Manager"
+    TITLE_FILES[0]=70; TITLE_FILES[1]=105; TITLE_FILES[2]=108;
+    TITLE_FILES[3]=101; TITLE_FILES[4]=32; TITLE_FILES[5]=77;
+    TITLE_FILES[6]=97; TITLE_FILES[7]=110; TITLE_FILES[8]=97;
+    TITLE_FILES[9]=103; TITLE_FILES[10]=101; TITLE_FILES[11]=114;
+}
+
+// Abre janela do terminal
+void open_terminal() {
+    if (win_terminal != 0 - 1) {
+        // Já existe, apenas traz para frente ou restaura
+        if (WM_TABLE[win_terminal * WM_FIELDS + 8] == 1) {
+            wm_restore(win_terminal);
+        } else {
+            wm_set_focus(win_terminal);
+        }
+        return;
+    }
+    win_terminal = wm_create_window(100, 80, 680, 460, TITLE_TERMINAL, 8, 0);
+    if (win_terminal != 0 - 1) {
+        int cx = wm_content_x();
+        int cy = wm_content_y();
+        int cw = WM_TABLE[win_terminal * WM_FIELDS + 3] - 4;
+        int ch = WM_TABLE[win_terminal * WM_FIELDS + 4] - WM_TITLE_HEIGHT - 4;
+        term_init(cx, cy, cw, ch);
+        term_start();
+    }
+    need_redraw = 1;
+}
+
+// Abre janela do editor
+void open_editor() {
+    if (win_editor != 0 - 1) {
+        if (WM_TABLE[win_editor * WM_FIELDS + 8] == 1) {
+            wm_restore(win_editor);
+        } else {
+            wm_set_focus(win_editor);
+        }
+        return;
+    }
+    win_editor = wm_create_window(200, 100, 700, 480, TITLE_EDITOR, 11, 1);
+    if (win_editor != 0 - 1) {
+        int cx = WM_TABLE[win_editor * WM_FIELDS + 1] + 2;
+        int cy = WM_TABLE[win_editor * WM_FIELDS + 2] + WM_TITLE_HEIGHT;
+        int cw = WM_TABLE[win_editor * WM_FIELDS + 3] - 4;
+        int ch = WM_TABLE[win_editor * WM_FIELDS + 4] - WM_TITLE_HEIGHT - 4;
+        editor_init(cx, cy, cw, ch);
+    }
+    need_redraw = 1;
+}
+
+// Abre calculadora
+void open_calculator() {
+    if (win_calc != 0 - 1) {
+        if (WM_TABLE[win_calc * WM_FIELDS + 8] == 1) {
+            wm_restore(win_calc);
+        } else {
+            wm_set_focus(win_calc);
+        }
+        return;
+    }
+    win_calc = wm_create_window(850, 150, 340, 460, TITLE_CALC, 10, 2);
+    if (win_calc != 0 - 1) {
+        int cx = WM_TABLE[win_calc * WM_FIELDS + 1] + 4;
+        int cy = WM_TABLE[win_calc * WM_FIELDS + 2] + WM_TITLE_HEIGHT + 4;
+        int cw = WM_TABLE[win_calc * WM_FIELDS + 3] - 8;
+        int ch = WM_TABLE[win_calc * WM_FIELDS + 4] - WM_TITLE_HEIGHT - 8;
+        calc_init(cx, cy, cw, ch);
+        calc_update_display(0);
+    }
+    need_redraw = 1;
+}
+
+// Abre gerenciador de arquivos
+void open_files() {
+    if (win_files != 0 - 1) {
+        if (WM_TABLE[win_files * WM_FIELDS + 8] == 1) {
+            wm_restore(win_files);
+        } else {
+            wm_set_focus(win_files);
+        }
+        return;
+    }
+    win_files = wm_create_window(150, 120, 640, 440, TITLE_FILES, 12, 3);
+    if (win_files != 0 - 1) {
+        int cx = WM_TABLE[win_files * WM_FIELDS + 1] + 2;
+        int cy = WM_TABLE[win_files * WM_FIELDS + 2] + WM_TITLE_HEIGHT;
+        int cw = WM_TABLE[win_files * WM_FIELDS + 3] - 4;
+        int ch = WM_TABLE[win_files * WM_FIELDS + 4] - WM_TITLE_HEIGHT - 4;
+        files_init(cx, cy, cw, ch);
+    }
+    need_redraw = 1;
+}
+
+// Sincroniza posição/tamanho do conteúdo dos apps com suas janelas
+void sync_app_positions() {
+    if (win_terminal != 0 - 1 && WM_TABLE[win_terminal * WM_FIELDS + 0] == 1) {
+        if (WM_TABLE[win_terminal * WM_FIELDS + 8] == 0) {
+            term_x_offset = WM_TABLE[win_terminal * WM_FIELDS + 1] + 2;
+            term_y_offset = WM_TABLE[win_terminal * WM_FIELDS + 2] + WM_TITLE_HEIGHT;
+            term_w = WM_TABLE[win_terminal * WM_FIELDS + 3] - 4;
+            term_h = WM_TABLE[win_terminal * WM_FIELDS + 4] - WM_TITLE_HEIGHT - 4;
+            term_cols_actual = term_w / 8;
+            term_rows_actual = term_h / 16;
+        }
+    } else {
+        win_terminal = 0 - 1;
+    }
+    
+    if (win_editor != 0 - 1 && WM_TABLE[win_editor * WM_FIELDS + 0] == 1) {
+        if (WM_TABLE[win_editor * WM_FIELDS + 8] == 0) {
+            editor_x = WM_TABLE[win_editor * WM_FIELDS + 1] + 2;
+            editor_y = WM_TABLE[win_editor * WM_FIELDS + 2] + WM_TITLE_HEIGHT;
+            editor_w = WM_TABLE[win_editor * WM_FIELDS + 3] - 4;
+            editor_h = WM_TABLE[win_editor * WM_FIELDS + 4] - WM_TITLE_HEIGHT - 4;
+        }
+    } else {
+        win_editor = 0 - 1;
+    }
+    
+    if (win_calc != 0 - 1 && WM_TABLE[win_calc * WM_FIELDS + 0] == 1) {
+        if (WM_TABLE[win_calc * WM_FIELDS + 8] == 0) {
+            calc_x = WM_TABLE[win_calc * WM_FIELDS + 1] + 4;
+            calc_y = WM_TABLE[win_calc * WM_FIELDS + 2] + WM_TITLE_HEIGHT + 4;
+            calc_w = WM_TABLE[win_calc * WM_FIELDS + 3] - 8;
+            calc_h = WM_TABLE[win_calc * WM_FIELDS + 4] - WM_TITLE_HEIGHT - 8;
+        }
+    } else {
+        win_calc = 0 - 1;
+    }
+    
+    if (win_files != 0 - 1 && WM_TABLE[win_files * WM_FIELDS + 0] == 1) {
+        if (WM_TABLE[win_files * WM_FIELDS + 8] == 0) {
+            files_x = WM_TABLE[win_files * WM_FIELDS + 1] + 2;
+            files_y = WM_TABLE[win_files * WM_FIELDS + 2] + WM_TITLE_HEIGHT;
+            files_w = WM_TABLE[win_files * WM_FIELDS + 3] - 4;
+            files_h = WM_TABLE[win_files * WM_FIELDS + 4] - WM_TITLE_HEIGHT - 4;
+        }
+    } else {
+        win_files = 0 - 1;
+    }
+}
+
+// Renderiza o conteúdo das janelas ativas
+void render_window_contents() {
+    // Renderiza em ordem de z-order também
+    for (int z = 0; z < wm_next_z; z = z + 1) {
+        // Terminal
+        if (win_terminal != 0 - 1) {
+            if (WM_TABLE[win_terminal * WM_FIELDS + 0] == 1) {
+                if (WM_TABLE[win_terminal * WM_FIELDS + 8] == 0) {
+                    if (WM_TABLE[win_terminal * WM_FIELDS + 7] == z) {
+                        term_render();
+                    }
+                }
+            }
+        }
+        
+        // Editor
+        if (win_editor != 0 - 1) {
+            if (WM_TABLE[win_editor * WM_FIELDS + 0] == 1) {
+                if (WM_TABLE[win_editor * WM_FIELDS + 8] == 0) {
+                    if (WM_TABLE[win_editor * WM_FIELDS + 7] == z) {
+                        editor_render();
+                    }
+                }
+            }
+        }
+        
+        // Calculator
+        if (win_calc != 0 - 1) {
+            if (WM_TABLE[win_calc * WM_FIELDS + 0] == 1) {
+                if (WM_TABLE[win_calc * WM_FIELDS + 8] == 0) {
+                    if (WM_TABLE[win_calc * WM_FIELDS + 7] == z) {
+                        calc_render();
+                    }
+                }
+            }
+        }
+        
+        // Files
+        if (win_files != 0 - 1) {
+            if (WM_TABLE[win_files * WM_FIELDS + 0] == 1) {
+                if (WM_TABLE[win_files * WM_FIELDS + 8] == 0) {
+                    if (WM_TABLE[win_files * WM_FIELDS + 7] == z) {
+                        files_render();
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Lida com entrada de teclado roteando para app focado
+void handle_keyboard_input() {
+    int key = pop_key();
+    if (key == 0) { return; }
+    
+    int focused = wm_get_focused();
+    if (focused == 0 - 1) { return; }
+    
+    // Rota para o app correto
+    int content_type = WM_TABLE[focused * WM_FIELDS + 10];
+    
+    if (focused == win_terminal && content_type == 0) {
+        term_handle_key(key);
+        need_redraw = 1;
+    }
+    if (focused == win_editor && content_type == 1) {
+        editor_handle_key(key);
+        need_redraw = 1;
+    }
+    if (focused == win_calc && content_type == 2) {
+        calc_handle_key(key);
+        need_redraw = 1;
+    }
+}
+
+// Lida com eventos do mouse
+void handle_mouse_events() {
+    mouse_x = gui_mouse_x();
+    mouse_y = gui_mouse_y();
+    mouse_btn = gui_mouse_btn();
+    
+    // Detecta click (transição 0->1)
+    mouse_click = 0;
+    if (mouse_btn == 1 && prev_mouse_btn == 0) {
+        mouse_click = 1;
+    }
+    prev_mouse_btn = mouse_btn;
+    
+    // Click em algo
+    if (mouse_click == 1) {
+        // Verifica taskbar primeiro
+        if (mouse_y >= TASKBAR_Y) {
+            int app_idx = taskbar_handle_click(mouse_x, mouse_y);
+            if (app_idx == 0) { open_terminal(); }
+            if (app_idx == 1) { open_editor(); }
+            if (app_idx == 2) { open_calculator(); }
+            if (app_idx == 3) { open_files(); }
+            need_redraw = 1;
+        } else {
+            // Verifica clique nas janelas
+            int result = wm_handle_click(mouse_x, mouse_y);
+            
+            // Clique na calculadora
+            if (win_calc != 0 - 1 && result == win_calc) {
+                if (WM_TABLE[win_calc * WM_FIELDS + 8] == 0) {
+                    calc_handle_click(mouse_x, mouse_y);
+                }
+            }
+            
+            // Clique no gerenciador de arquivos
+            if (win_files != 0 - 1 && result == win_files) {
+                if (WM_TABLE[win_files * WM_FIELDS + 8] == 0) {
+                    files_handle_click(mouse_x, mouse_y);
+                }
+            }
+            
+            // Clique nos ícones do desktop (quando não há janela)
+            if (result == 0 - 1) {
+                // Ícone terminal
+                if (gui_point_in_rect(mouse_x, mouse_y, 20, 20, 56, 56) == 1) {
+                    open_terminal();
+                }
+                // Ícone editor
+                if (gui_point_in_rect(mouse_x, mouse_y, 20, 100, 56, 56) == 1) {
+                    open_editor();
+                }
+                // Ícone calc
+                if (gui_point_in_rect(mouse_x, mouse_y, 20, 180, 56, 56) == 1) {
+                    open_calculator();
+                }
+                // Ícone files
+                if (gui_point_in_rect(mouse_x, mouse_y, 20, 260, 56, 56) == 1) {
+                    open_files();
+                }
+            }
+            
+            need_redraw = 1;
+        }
+    }
+    
+    // Drag de janelas
+    if (mouse_btn == 1) {
+        wm_handle_drag(mouse_x, mouse_y, 1);
+        if (wm_drag_active == 1) {
+            need_redraw = 1;
+        }
+    } else {
+        wm_handle_drag(mouse_x, mouse_y, 0);
+    }
+    
+    // Cursor do mouse
+    // Desenha cursor após tudo (não precisa redesenhar a tela toda)
+}
+
+// Desenha cursor do mouse
+void draw_mouse_cursor() {
+    int mx = mouse_x;
+    int my = mouse_y;
+    
+    // Seta simples
+    gui_fill_rect(mx, my, 2, 12, COLOR_WHITE);
+    gui_fill_rect(mx, my, 8, 2, COLOR_WHITE);
+    gui_draw_line(mx, my, (mx + 6), (my + 6), COLOR_WHITE);
+    
+    // Sombra do cursor
+    gui_draw_rect((mx - 1), (my - 1), 10, 14, 0xFF000000);
+}
+
+// Loop principal do OS
+void main() {
+    // 1. Inicialização
+    gui_clear();
+    gui_flip();
+    
+    // 2. Inicializa subsistemas
+    vfs_init();
+    wm_init();
+    taskbar_init_strings();
+    init_window_titles();
+    
+    // 3. Registra interrupções
+    register_interrupt(32, timer_interrupt_handler);
+    register_interrupt(33, keyboard_interrupt_handler_main);
+    register_interrupt(34, alt_tab_handler);
+    
+    // 4. Habilita interrupções
+    asm { "STI" }
+    
+    // 5. Cria alguns arquivos de exemplo no VFS
+    int[5] fname1;
+    fname1[0]=104; fname1[1]=101; fname1[2]=108; fname1[3]=108; fname1[4]=111;
+    vfs_create(fname1, 5);
+    
+    int[9] fname2;
+    fname2[0]=114; fname2[1]=101; fname2[2]=97; fname2[3]=100; fname2[4]=109;
+    fname2[5]=101; fname2[6]=46; fname2[7]=109; fname2[8]=100;
+    vfs_create(fname2, 9);
+    
+    // 6. Desenha wallpaper inicial
+    desktop_draw_wallpaper();
+    
+    // 7. Desenha taskbar inicial
+    taskbar_draw(0 - 1);
+    
+    // 8. Exibe na tela
+    gui_flip();
+    
+    // 9. Loop principal do OS
+    int last_tick = 0;
+    
+    while (1 == 1) {
+        // Atualiza relógio
+        taskbar_tick();
+        
+        // Processa entrada de teclado
+        handle_keyboard_input();
+        
+        // Processa mouse
+        handle_mouse_events();
+        
+        // Sincroniza posições dos apps com as janelas
+        sync_app_positions();
+        
+        // A cada frame: redesenha tudo se necessário
+        if (need_redraw == 1 || (frame_counter % 30) == 0) {
+            need_redraw = 0;
+            
+            // Fundo: redesenha wallpaper
+            desktop_draw_wallpaper();
+            
+            // Desenha conteúdo das janelas na ordem de z
+            render_window_contents();
+            
+            // Desenha as bordas/decorações das janelas por cima
+            wm_draw_all();
+            
+            // Desenha a taskbar sempre por cima
+            int focused_type = 0 - 1;
+            if (wm_focused != 0 - 1) {
+                focused_type = WM_TABLE[wm_focused * WM_FIELDS + 10];
+            }
+            taskbar_draw(focused_type);
+            
+            // Cursor do mouse sempre por último
+            draw_mouse_cursor();
+            
+            // Flip buffer
+            gui_flip();
+        }
+        
+        // Yield para não travar a VM
+        asm { "YIELD" }
+    }
+}

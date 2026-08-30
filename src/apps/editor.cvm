@@ -1,0 +1,301 @@
+// =========================================================
+// APLICATIVO: EDITOR DE TEXTO - Zorin VM OS
+// Editor minimalista estilo Kate/Gedit
+// =========================================================
+import "../drivers/vga.cvm";
+
+int EDITOR_MAX_LINES = 40;
+int EDITOR_MAX_COLS  = 120;
+
+// Buffer do editor (linhas armazenadas sequencialmente)
+// Cada linha: 120 chars + 1 int de comprimento
+int EDITOR_LINE_SIZE = 121;
+*int EDITOR_BUF = 5000000;  // 5MB na RAM
+
+int editor_cursor_line = 0;
+int editor_cursor_col  = 0;
+int editor_num_lines   = 1;
+int editor_scroll_y    = 0;
+int editor_x = 0;
+int editor_y = 0;
+int editor_w = 640;
+int editor_h = 400;
+int editor_modified = 0;
+
+void editor_init(int x, int y, int w, int h) {
+    editor_x = x;
+    editor_y = y;
+    editor_w = w;
+    editor_h = h;
+    editor_cursor_line = 0;
+    editor_cursor_col  = 0;
+    editor_num_lines   = 1;
+    editor_scroll_y    = 0;
+    editor_modified    = 0;
+    
+    // Inicializa linhas com comprimento 0
+    for (int i = 0; i < EDITOR_MAX_LINES; i = i + 1) {
+        EDITOR_BUF[i * EDITOR_LINE_SIZE + EDITOR_MAX_COLS] = 0; // len = 0
+    }
+}
+
+int editor_line_len(int line) {
+    return EDITOR_BUF[line * EDITOR_LINE_SIZE + EDITOR_MAX_COLS];
+}
+
+int editor_get_char(int line, int col) {
+    return EDITOR_BUF[line * EDITOR_LINE_SIZE + col];
+}
+
+void editor_set_char(int line, int col, int ch) {
+    EDITOR_BUF[line * EDITOR_LINE_SIZE + col] = ch;
+}
+
+void editor_set_line_len(int line, int len) {
+    EDITOR_BUF[line * EDITOR_LINE_SIZE + EDITOR_MAX_COLS] = len;
+}
+
+// Insere caractere na posição atual
+void editor_insert_char(int ch) {
+    if (editor_cursor_line >= EDITOR_MAX_LINES) { return; }
+    int line = editor_cursor_line;
+    int col  = editor_cursor_col;
+    int len  = editor_line_len(line);
+    
+    if (len >= EDITOR_MAX_COLS - 1) { return; } // Linha cheia
+    
+    // Desloca caracteres para direita
+    int i = len;
+    while (i > col) {
+        editor_set_char(line, i, editor_get_char(line, i - 1));
+        i = i - 1;
+    }
+    editor_set_char(line, col, ch);
+    editor_set_line_len(line, len + 1);
+    editor_cursor_col = editor_cursor_col + 1;
+    editor_modified = 1;
+}
+
+// Insere nova linha (Enter)
+void editor_new_line() {
+    if (editor_num_lines >= EDITOR_MAX_LINES) { return; }
+    
+    int line = editor_cursor_line;
+    int col  = editor_cursor_col;
+    int len  = editor_line_len(line);
+    
+    // Move linhas abaixo para baixo
+    int i = editor_num_lines - 1;
+    while (i > line) {
+        for (int c = 0; c < EDITOR_MAX_COLS; c = c + 1) {
+            editor_set_char(i + 1, c, editor_get_char(i, c));
+        }
+        editor_set_line_len(i + 1, editor_line_len(i));
+        i = i - 1;
+    }
+    
+    // Copia o resto da linha atual para a nova linha
+    int rest = len - col;
+    for (int c = 0; c < rest; c = c + 1) {
+        editor_set_char(line + 1, c, editor_get_char(line, col + c));
+    }
+    editor_set_line_len(line + 1, rest);
+    
+    // Trunca linha atual
+    editor_set_line_len(line, col);
+    
+    editor_num_lines = editor_num_lines + 1;
+    editor_cursor_line = editor_cursor_line + 1;
+    editor_cursor_col = 0;
+    editor_modified = 1;
+}
+
+// Backspace
+void editor_backspace() {
+    if (editor_cursor_col > 0) {
+        int line = editor_cursor_line;
+        int col  = editor_cursor_col;
+        int len  = editor_line_len(line);
+        
+        // Desloca para esquerda
+        for (int i = col - 1; i < len - 1; i = i + 1) {
+            editor_set_char(line, i, editor_get_char(line, i + 1));
+        }
+        editor_set_line_len(line, len - 1);
+        editor_cursor_col = editor_cursor_col - 1;
+        editor_modified = 1;
+    } if (editor_cursor_line > 0) {
+        // Junta linha atual com a anterior
+        int prev_line = editor_cursor_line - 1;
+        int prev_len  = editor_line_len(prev_line);
+        int curr_len  = editor_line_len(editor_cursor_line);
+        
+        if (prev_len + curr_len < EDITOR_MAX_COLS) {
+            for (int c = 0; c < curr_len; c = c + 1) {
+                editor_set_char(prev_line, prev_len + c, editor_get_char(editor_cursor_line, c));
+            }
+            editor_set_line_len(prev_line, prev_len + curr_len);
+            
+            // Remove linha atual
+            int total = editor_num_lines;
+            for (int i = editor_cursor_line; i < total - 1; i = i + 1) {
+                for (int c = 0; c < EDITOR_MAX_COLS; c = c + 1) {
+                    editor_set_char(i, c, editor_get_char(i + 1, c));
+                }
+                editor_set_line_len(i, editor_line_len(i + 1));
+            }
+            editor_num_lines = editor_num_lines - 1;
+            editor_cursor_line = prev_line;
+            editor_cursor_col  = prev_len;
+            editor_modified = 1;
+        }
+    }
+}
+
+// Movimentação do cursor
+void editor_move_left() {
+    if (editor_cursor_col > 0) {
+        editor_cursor_col = editor_cursor_col - 1;
+    } if (editor_cursor_line > 0) {
+        editor_cursor_line = editor_cursor_line - 1;
+        editor_cursor_col = editor_line_len(editor_cursor_line);
+    }
+}
+
+void editor_move_right() {
+    int len = editor_line_len(editor_cursor_line);
+    if (editor_cursor_col < len) {
+        editor_cursor_col = editor_cursor_col + 1;
+    } if (editor_cursor_line < editor_num_lines - 1) {
+        editor_cursor_line = editor_cursor_line + 1;
+        editor_cursor_col = 0;
+    }
+}
+
+void editor_move_up() {
+    if (editor_cursor_line > 0) {
+        editor_cursor_line = editor_cursor_line - 1;
+        int len = editor_line_len(editor_cursor_line);
+        if (editor_cursor_col > len) {
+            editor_cursor_col = len;
+        }
+    }
+}
+
+void editor_move_down() {
+    if (editor_cursor_line < editor_num_lines - 1) {
+        editor_cursor_line = editor_cursor_line + 1;
+        int len = editor_line_len(editor_cursor_line);
+        if (editor_cursor_col > len) {
+            editor_cursor_col = len;
+        }
+    }
+}
+
+// Renderiza o editor
+void editor_render() {
+    int bg = 0xFF13131F;
+    int line_num_bg = 0xFF0D0D1A;
+    gui_fill_rect(editor_x, editor_y, editor_w, editor_h, bg);
+    
+    int line_num_w = 40;
+    gui_fill_rect(editor_x, editor_y, line_num_w, editor_h, line_num_bg);
+    gui_draw_line((editor_x + line_num_w), editor_y, (editor_x + line_num_w), (editor_y + editor_h), COLOR_DARK_GRAY);
+    
+    int visible_rows = editor_h / 16;
+    int text_x = editor_x + line_num_w + 4;
+    
+    // Ajusta scroll se cursor saiu da área visível
+    if (editor_cursor_line < editor_scroll_y) {
+        editor_scroll_y = editor_cursor_line;
+    }
+    if (editor_cursor_line >= editor_scroll_y + visible_rows) {
+        editor_scroll_y = editor_cursor_line - visible_rows + 1;
+    }
+    
+    for (int r = 0; r < visible_rows; r = r + 1) {
+        int line_idx = editor_scroll_y + r;
+        if (line_idx >= editor_num_lines) { r = visible_rows; }
+        
+        int py = editor_y + r * 16;
+        
+        // Linha de cursor highlighted
+        if (line_idx == editor_cursor_line) {
+            gui_fill_rect(editor_x, py, editor_w, 16, 0xFF1A1A2E);
+        }
+        
+        // Número de linha
+        int ln = line_idx + 1;
+        int ln10 = ln / 10;
+        int ln1  = ln % 10;
+        if (ln10 > 0) {
+            gui_draw_char((editor_x + 14), py, (ln10 + 48), COLOR_TEXT_DIM, 0);
+        }
+        gui_draw_char((editor_x + 24), py, (ln1 + 48), COLOR_TEXT_DIM, 0);
+        
+        // Conteúdo da linha
+        int len = editor_line_len(line_idx);
+        int cx = text_x;
+        for (int c = 0; c < len; c = c + 1) {
+            int ch = editor_get_char(line_idx, c);
+            int color = 0xFFEEEEEE;
+            
+            // Syntax highlighting básico
+            // Keywords em cyan: if, else, while, for, return, int, void, struct
+            // Strings em laranja
+            // Números em verde
+            if (ch >= 48 && ch <= 57) { // digit
+                color = COLOR_GREEN;
+            }
+            
+            gui_draw_char(cx, py, ch, color, 0);
+            cx = cx + 8;
+            if (cx >= editor_x + editor_w - 8) { c = len; }
+        }
+    }
+    
+    // Cursor piscante
+    int cframe = 0;
+    asm { "IN {cframe}, 980" }
+    if ((cframe / 30) % 2 == 0) {
+        int cur_row_vis = editor_cursor_line - editor_scroll_y;
+        if (cur_row_vis >= 0 && cur_row_vis < visible_rows) {
+            int cpx = text_x + editor_cursor_col * 8;
+            int cpy = editor_y + cur_row_vis * 16;
+            gui_fill_rect(cpx, cpy, 2, 16, 0xFFEEEEEE);
+        }
+    }
+    
+    // Status bar
+    int status_y = editor_y + editor_h - 20;
+    gui_fill_rect(editor_x, status_y, editor_w, 20, COLOR_PANEL);
+    // "Ln: XX Col: XX"
+    gui_draw_char(text_x, (status_y + 2), 76, COLOR_TEXT_DIM, 0);  // L
+    gui_draw_char((text_x + 8), (status_y + 2), 110, COLOR_TEXT_DIM, 0);  // n
+    gui_draw_char((text_x + 16), (status_y + 2), 58, COLOR_TEXT_DIM, 0);  // :
+    gui_draw_char((text_x + 24), (status_y + 2), ((editor_cursor_line + 1) / 10 + 48), COLOR_WHITE, 0);
+    gui_draw_char((text_x + 32), (status_y + 2), ((editor_cursor_line + 1) % 10 + 48), COLOR_WHITE, 0);
+    
+    if (editor_modified == 1) {
+        gui_draw_char((text_x + 80), (status_y + 2), 42, COLOR_ACCENT2, 0); // '*' = modificado
+    }
+}
+
+// Lida com entrada de teclado no editor
+void editor_handle_key(int key) {
+    if (key == 10) {      // Enter
+        editor_new_line();
+    } if (key == 8) {  // Backspace
+        editor_backspace();
+    } if (key == 201) { // Up
+        editor_move_up();
+    } if (key == 202) { // Down
+        editor_move_down();
+    } if (key == 203) { // Left
+        editor_move_left();
+    } if (key == 204) { // Right
+        editor_move_right();
+    } if (key >= 32 && key < 127) {
+        editor_insert_char(key);
+    }
+}

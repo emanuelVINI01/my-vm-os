@@ -1,0 +1,402 @@
+// =========================================================
+// WINDOW MANAGER (WM) - Zorin VM OS
+// Gerencia janelas com Alt+Tab, drag, focus, etc.
+// =========================================================
+import "../drivers/vga.cvm";
+
+// Constantes
+int WM_MAX_WINDOWS = 8;
+int WM_TITLE_HEIGHT = 32;
+int WM_BORDER = 2;
+int WM_MIN_W = 200;
+int WM_MIN_H = 100;
+
+// Estrutura de janela (14 campos por janela):
+// [0] active (0=livre, 1=ativo)
+// [1] x
+// [2] y
+// [3] w
+// [4] h
+// [5] title_addr (endereço da string do título na RAM)
+// [6] title_len
+// [7] z_order (0=mais fundo, maior=mais frente)
+// [8] minimized (0=normal, 1=minimizado)
+// [9] maximized (0=normal, 1=maximizado)
+// [10] content_type (0=terminal, 1=editor, 2=calc, 3=files, 4=browser)
+// [11] saved_x (para restaurar de maximizado)
+// [12] saved_y
+// [13] saved_w
+// [14] saved_h  <- total 15 campos
+
+int WM_FIELDS = 15;
+
+*int WM_TABLE = 4194304; // 0x400000 - tabela de janelas
+int wm_focused = 0 - 1; // índice da janela em foco (-1 = nenhuma)
+int wm_drag_active = 0;
+int wm_drag_win = 0 - 1;
+int wm_drag_off_x = 0;
+int wm_drag_off_y = 0;
+int wm_window_count = 0;
+int wm_alt_tab_idx = 0;  // índice do alt-tab cycle
+int wm_next_z = 1;        // próximo z-order
+
+// Inicializa o window manager
+void wm_init() {
+    for (int i = 0; i < WM_MAX_WINDOWS; i = i + 1) {
+        WM_TABLE[i * WM_FIELDS + 0] = 0; // active = false
+    }
+    wm_focused = 0 - 1;
+    wm_drag_active = 0;
+    wm_window_count = 0;
+    wm_next_z = 1;
+}
+
+// Cria uma nova janela, retorna o índice ou -1 se falhou
+int wm_create_window(int x, int y, int w, int h, *int title, int title_len, int content_type) {
+    int idx = 0 - 1;
+    for (int i = 0; i < WM_MAX_WINDOWS; i = i + 1) {
+        if (WM_TABLE[i * WM_FIELDS + 0] == 0) {
+            idx = i;
+            i = WM_MAX_WINDOWS; // break
+        }
+    }
+    if (idx == 0 - 1) {
+        return 0 - 1; // Sem espaço
+    }
+    
+    int base = idx * WM_FIELDS;
+    WM_TABLE[base + 0] = 1;
+    WM_TABLE[base + 1] = x;
+    WM_TABLE[base + 2] = y;
+    WM_TABLE[base + 3] = w;
+    WM_TABLE[base + 4] = h;
+    WM_TABLE[base + 5] = title;
+    WM_TABLE[base + 6] = title_len;
+    WM_TABLE[base + 7] = wm_next_z;
+    WM_TABLE[base + 8] = 0; // not minimized
+    WM_TABLE[base + 9] = 0; // not maximized
+    WM_TABLE[base + 10] = content_type;
+    WM_TABLE[base + 11] = x;
+    WM_TABLE[base + 12] = y;
+    WM_TABLE[base + 13] = w;
+    WM_TABLE[base + 14] = h;
+    
+    wm_next_z = wm_next_z + 1;
+    wm_window_count = wm_window_count + 1;
+    
+    // Foca a nova janela
+    wm_set_focus(idx);
+    
+    return idx;
+}
+
+// Fecha uma janela
+void wm_close_window(int idx) {
+    if (idx < 0 || idx >= WM_MAX_WINDOWS) { return; }
+    WM_TABLE[idx * WM_FIELDS + 0] = 0;
+    wm_window_count = wm_window_count - 1;
+    if (wm_focused == idx) {
+        wm_focused = 0 - 1;
+        // Procura próxima janela com maior z-order
+        int best_z = 0;
+        for (int i = 0; i < WM_MAX_WINDOWS; i = i + 1) {
+            if (WM_TABLE[i * WM_FIELDS + 0] == 1) {
+                int z = WM_TABLE[i * WM_FIELDS + 7];
+                if (z > best_z) {
+                    best_z = z;
+                    wm_focused = i;
+                }
+            }
+        }
+    }
+}
+
+// Define foco para janela
+void wm_set_focus(int idx) {
+    if (idx < 0 || idx >= WM_MAX_WINDOWS) { return; }
+    if (WM_TABLE[idx * WM_FIELDS + 0] == 0) { return; }
+    
+    wm_focused = idx;
+    WM_TABLE[idx * WM_FIELDS + 7] = wm_next_z;
+    wm_next_z = wm_next_z + 1;
+}
+
+// Minimiza janela
+void wm_minimize(int idx) {
+    if (idx < 0 || idx >= WM_MAX_WINDOWS) { return; }
+    WM_TABLE[idx * WM_FIELDS + 8] = 1;
+    if (wm_focused == idx) {
+        wm_focused = 0 - 1;
+    }
+}
+
+// Restaura janela
+void wm_restore(int idx) {
+    if (idx < 0 || idx >= WM_MAX_WINDOWS) { return; }
+    WM_TABLE[idx * WM_FIELDS + 8] = 0;
+    WM_TABLE[idx * WM_FIELDS + 9] = 0;
+    // Restaura posição salva
+    WM_TABLE[idx * WM_FIELDS + 1] = WM_TABLE[idx * WM_FIELDS + 11];
+    WM_TABLE[idx * WM_FIELDS + 2] = WM_TABLE[idx * WM_FIELDS + 12];
+    WM_TABLE[idx * WM_FIELDS + 3] = WM_TABLE[idx * WM_FIELDS + 13];
+    WM_TABLE[idx * WM_FIELDS + 4] = WM_TABLE[idx * WM_FIELDS + 14];
+    wm_set_focus(idx);
+}
+
+// Maximiza janela
+void wm_maximize(int idx) {
+    if (idx < 0 || idx >= WM_MAX_WINDOWS) { return; }
+    int base = idx * WM_FIELDS;
+    if (WM_TABLE[base + 9] == 0) {
+        // Salva posição atual
+        WM_TABLE[base + 11] = WM_TABLE[base + 1];
+        WM_TABLE[base + 12] = WM_TABLE[base + 2];
+        WM_TABLE[base + 13] = WM_TABLE[base + 3];
+        WM_TABLE[base + 14] = WM_TABLE[base + 4];
+        // Maximiza (deixa espaço para taskbar 40px)
+        WM_TABLE[base + 1] = 0;
+        WM_TABLE[base + 2] = 0;
+        WM_TABLE[base + 3] = SCREEN_W;
+        WM_TABLE[base + 4] = SCREEN_H - 48;
+        WM_TABLE[base + 9] = 1;
+    } else {
+        wm_restore(idx);
+    }
+}
+
+// Desenha uma janela individual
+void wm_draw_window(int idx) {
+    if (idx < 0 || idx >= WM_MAX_WINDOWS) { return; }
+    int base = idx * WM_FIELDS;
+    if (WM_TABLE[base + 0] == 0) { return; }
+    if (WM_TABLE[base + 8] == 1) { return; } // minimizada
+    
+    int wx = WM_TABLE[base + 1];
+    int wy = WM_TABLE[base + 2];
+    int ww = WM_TABLE[base + 3];
+    int wh = WM_TABLE[base + 4];
+    int is_focused = 0;
+    if (idx == wm_focused) { is_focused = 1; }
+    
+    // Sombra da janela
+    if (is_focused == 1) {
+        gui_fill_rect((wx + 4), (wy + 4), ww, wh, 0xFF000020);
+    }
+    
+    // Fundo da janela
+    gui_fill_rect(wx, wy, ww, wh, COLOR_WIN_BG);
+    
+    // Barra de título
+    int title_color = COLOR_WIN_TITLE;
+    if (is_focused == 1) {
+        title_color = COLOR_PANEL_LIGHT;
+    }
+    gui_fill_rect(wx, wy, ww, WM_TITLE_HEIGHT, title_color);
+    
+    // Gradiente na barra de título (linha accent)
+    if (is_focused == 1) {
+        gui_draw_line(wx, wy, (wx + ww), wy, COLOR_ACCENT);
+    }
+    
+    // Botões de controle (close, min, max) - estilo macOS
+    int btn_y = wy + (WM_TITLE_HEIGHT - 14) / 2;
+    
+    // Close (vermelho)
+    gui_fill_round_rect((wx + 8), btn_y, 14, 14, 7, COLOR_BTN_CLOSE);
+    
+    // Minimize (amarelo)
+    gui_fill_round_rect((wx + 28), btn_y, 14, 14, 7, COLOR_BTN_MIN);
+    
+    // Maximize (verde)
+    gui_fill_round_rect((wx + 48), btn_y, 14, 14, 7, COLOR_BTN_MAX);
+    
+    // Título da janela
+    int title_addr = WM_TABLE[base + 5];
+    int title_len = WM_TABLE[base + 6];
+    int title_x = wx + 72;
+    int title_y = wy + (WM_TITLE_HEIGHT - 16) / 2;
+    gui_draw_string(title_x, title_y, title_addr, title_len, COLOR_WHITE, 0);
+    
+    // Borda da janela
+    int border_color = COLOR_DARK_GRAY;
+    if (is_focused == 1) {
+        border_color = COLOR_ACCENT;
+    }
+    gui_draw_rect(wx, wy, ww, wh, border_color);
+    
+    // Separador abaixo da barra de título
+    gui_draw_line(wx, (wy + WM_TITLE_HEIGHT), (wx + ww), (wy + WM_TITLE_HEIGHT), border_color);
+}
+
+// Desenha borda de redimensionamento (handle no canto inferior direito)
+void wm_draw_resize_handle(int idx) {
+    int base = idx * WM_FIELDS;
+    if (WM_TABLE[base + 0] == 0) { return; }
+    if (WM_TABLE[base + 8] == 1) { return; }
+    int wx = WM_TABLE[base + 1];
+    int wy = WM_TABLE[base + 2];
+    int ww = WM_TABLE[base + 3];
+    int wh = WM_TABLE[base + 4];
+    // Handle lines no canto inferior direito
+    gui_draw_line((wx + ww - 12), (wy + wh - 2), (wx + ww - 2), (wy + wh - 12), COLOR_GRAY);
+    gui_draw_line((wx + ww - 7), (wy + wh - 2), (wx + ww - 2), (wy + wh - 7), COLOR_GRAY);
+}
+
+// Ordena janelas por z-order (simples bubble sort) e desenha da mais fundas para frente
+void wm_draw_all() {
+    // Desenha todas as janelas em ordem de z (mais fundas primeiro)
+    for (int z = 0; z < wm_next_z; z = z + 1) {
+        for (int i = 0; i < WM_MAX_WINDOWS; i = i + 1) {
+            if (WM_TABLE[i * WM_FIELDS + 0] == 1) {
+                if (WM_TABLE[i * WM_FIELDS + 7] == z) {
+                    wm_draw_window(i);
+                    wm_draw_resize_handle(i);
+                }
+            }
+        }
+    }
+}
+
+// Processa clique do mouse nas janelas - retorna índice da janela clicada ou -1
+int wm_handle_click(int mx, int my) {
+    // Verifica cliques nas janelas em ordem reversa (frente para trás)
+    int best_z = 0 - 1;
+    int best_idx = 0 - 1;
+    
+    for (int i = 0; i < WM_MAX_WINDOWS; i = i + 1) {
+        int base = i * WM_FIELDS;
+        if (WM_TABLE[base + 0] == 1 && WM_TABLE[base + 8] == 0) {
+            int wx = WM_TABLE[base + 1];
+            int wy = WM_TABLE[base + 2];
+            int ww = WM_TABLE[base + 3];
+            int wh = WM_TABLE[base + 4];
+            int z = WM_TABLE[base + 7];
+            
+            if (gui_point_in_rect(mx, my, wx, wy, ww, wh) == 1) {
+                if (z > best_z) {
+                    best_z = z;
+                    best_idx = i;
+                }
+            }
+        }
+    }
+    
+    if (best_idx != 0 - 1) {
+        int base = best_idx * WM_FIELDS;
+        int wx = WM_TABLE[base + 1];
+        int wy = WM_TABLE[base + 2];
+        int ww = WM_TABLE[base + 3];
+        
+        // Clicou na barra de título?
+        if (gui_point_in_rect(mx, my, wx, wy, ww, WM_TITLE_HEIGHT) == 1) {
+            // Botão close?
+            int btn_y = wy + (WM_TITLE_HEIGHT - 14) / 2;
+            if (gui_point_in_rect(mx, my, wx + 8, btn_y, 14, 14) == 1) {
+                wm_close_window(best_idx);
+                return 0 - 2; // Fechou janela
+            }
+            // Botão minimize?
+            if (gui_point_in_rect(mx, my, wx + 28, btn_y, 14, 14) == 1) {
+                wm_minimize(best_idx);
+                return 0 - 3; // Minimizou
+            }
+            // Botão maximize?
+            if (gui_point_in_rect(mx, my, wx + 48, btn_y, 14, 14) == 1) {
+                wm_maximize(best_idx);
+                return 0 - 4; // Maximizou
+            }
+            // Inicia drag
+            wm_drag_active = 1;
+            wm_drag_win = best_idx;
+            wm_drag_off_x = mx - wx;
+            wm_drag_off_y = my - wy;
+        }
+        
+        wm_set_focus(best_idx);
+    }
+    
+    return best_idx;
+}
+
+// Processa arraste de janela
+void wm_handle_drag(int mx, int my, int btn) {
+    if (wm_drag_active == 1 && btn == 1) {
+        if (wm_drag_win != 0 - 1) {
+            int base = wm_drag_win * WM_FIELDS;
+            int new_x = mx - wm_drag_off_x;
+            int new_y = my - wm_drag_off_y;
+            // Limita posição
+            if (new_x < 0) { new_x = 0; }
+            if (new_y < 0) { new_y = 0; }
+            if (new_x > SCREEN_W - 100) { new_x = SCREEN_W - 100; }
+            if (new_y > SCREEN_H - 100) { new_y = SCREEN_H - 100; }
+            WM_TABLE[base + 1] = new_x;
+            WM_TABLE[base + 2] = new_y;
+        }
+    } else {
+        wm_drag_active = 0;
+        wm_drag_win = 0 - 1;
+    }
+}
+
+// Alt+Tab - cicla entre janelas
+void wm_alt_tab() {
+    int count = 0;
+    for (int i = 0; i < WM_MAX_WINDOWS; i = i + 1) {
+        if (WM_TABLE[i * WM_FIELDS + 0] == 1) {
+            count = count + 1;
+        }
+    }
+    if (count == 0) { return; }
+    
+    // Próximo índice ativo
+    wm_alt_tab_idx = wm_alt_tab_idx + 1;
+    int found = 0;
+    int searched = 0;
+    while (found == 0 && searched < WM_MAX_WINDOWS) {
+        wm_alt_tab_idx = wm_alt_tab_idx % WM_MAX_WINDOWS;
+        if (WM_TABLE[wm_alt_tab_idx * WM_FIELDS + 0] == 1) {
+            found = 1;
+        } else {
+            wm_alt_tab_idx = wm_alt_tab_idx + 1;
+        }
+        searched = searched + 1;
+    }
+    
+    if (found == 1) {
+        if (WM_TABLE[wm_alt_tab_idx * WM_FIELDS + 8] == 1) {
+            wm_restore(wm_alt_tab_idx);
+        } else {
+            wm_set_focus(wm_alt_tab_idx);
+        }
+    }
+}
+
+// Retorna o índice da janela em foco
+int wm_get_focused() {
+    return wm_focused;
+}
+
+// Retorna x da área de conteúdo da janela focada
+int wm_content_x() {
+    if (wm_focused == 0 - 1) { return 0; }
+    return WM_TABLE[wm_focused * WM_FIELDS + 1] + WM_BORDER;
+}
+
+// Retorna y da área de conteúdo
+int wm_content_y() {
+    if (wm_focused == 0 - 1) { return 0; }
+    return WM_TABLE[wm_focused * WM_FIELDS + 2] + WM_TITLE_HEIGHT;
+}
+
+// Retorna largura da área de conteúdo
+int wm_content_w() {
+    if (wm_focused == 0 - 1) { return SCREEN_W; }
+    return WM_TABLE[wm_focused * WM_FIELDS + 3] - WM_BORDER * 2;
+}
+
+// Retorna altura da área de conteúdo
+int wm_content_h() {
+    if (wm_focused == 0 - 1) { return SCREEN_H; }
+    return WM_TABLE[wm_focused * WM_FIELDS + 4] - WM_TITLE_HEIGHT - WM_BORDER;
+}

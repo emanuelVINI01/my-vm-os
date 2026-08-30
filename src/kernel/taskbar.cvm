@@ -1,0 +1,245 @@
+// =========================================================
+// TASKBAR + DESKTOP SHELL - Zorin VM OS
+// Barra de tarefas inferior com relógio, ícones, botões de app
+// =========================================================
+import "../drivers/vga.cvm";
+import "wm.cvm";
+
+int TASKBAR_H = 48;
+int TASKBAR_Y = 752; // SCREEN_H - TASKBAR_H
+
+// Endereços de strings do título dos apps (na RAM)
+*int STR_TERMINAL = 4800000;
+*int STR_EDITOR   = 4800020;
+*int STR_CALC     = 4800040;
+*int STR_FILES    = 4800060;
+*int STR_ABOUT    = 4800080;
+*int STR_ZORIN    = 4800100;
+
+// Contador de ticks (para relógio simples)
+int tick_count = 0;
+int clock_hours = 10;
+int clock_mins = 0;
+int clock_secs = 0;
+
+// Inicializa strings do taskbar
+void taskbar_init_strings() {
+    // "Terminal" = 84,101,114,109,105,110,97,108
+    STR_TERMINAL[0] = 84;  STR_TERMINAL[1] = 101;
+    STR_TERMINAL[2] = 114; STR_TERMINAL[3] = 109;
+    STR_TERMINAL[4] = 105; STR_TERMINAL[5] = 110;
+    STR_TERMINAL[6] = 97;  STR_TERMINAL[7] = 108;
+    
+    // "Editor" = 69,100,105,116,111,114
+    STR_EDITOR[0] = 69;  STR_EDITOR[1] = 100;
+    STR_EDITOR[2] = 105; STR_EDITOR[3] = 116;
+    STR_EDITOR[4] = 111; STR_EDITOR[5] = 114;
+    
+    // "Calc" = 67,97,108,99
+    STR_CALC[0] = 67; STR_CALC[1] = 97;
+    STR_CALC[2] = 108; STR_CALC[3] = 99;
+    
+    // "Files" = 70,105,108,101,115
+    STR_FILES[0] = 70;  STR_FILES[1] = 105;
+    STR_FILES[2] = 108; STR_FILES[3] = 101;
+    STR_FILES[4] = 115;
+    
+    // "About" = 65,98,111,117,116
+    STR_ABOUT[0] = 65; STR_ABOUT[1] = 98;
+    STR_ABOUT[2] = 111; STR_ABOUT[3] = 117;
+    STR_ABOUT[4] = 116;
+    
+    // "ZorinVM" = 90,111,114,105,110,86,77
+    STR_ZORIN[0] = 90; STR_ZORIN[1] = 111;
+    STR_ZORIN[2] = 114; STR_ZORIN[3] = 105;
+    STR_ZORIN[4] = 110; STR_ZORIN[5] = 86;
+    STR_ZORIN[6] = 77;
+}
+
+// Desenha ícone de terminal (>_)
+void draw_icon_terminal(int x, int y, int selected) {
+    int bg = COLOR_PANEL;
+    if (selected == 1) { bg = COLOR_ACCENT; }
+    gui_fill_round_rect(x, y, 40, 40, 8, bg);
+    // > symbol
+    gui_draw_char((x+6), (y+12), 62, COLOR_GREEN, 0);
+    // _ symbol
+    gui_draw_char((x+20), (y+12), 95, COLOR_WHITE, 0);
+}
+
+// Desenha ícone de editor (documento)
+void draw_icon_editor(int x, int y, int selected) {
+    int bg = COLOR_PANEL;
+    if (selected == 1) { bg = COLOR_ACCENT; }
+    gui_fill_round_rect(x, y, 40, 40, 8, bg);
+    gui_fill_rect((x+8), (y+6), 24, 30, COLOR_WHITE);
+    gui_fill_rect((x+8), (y+14), 24, 2, COLOR_DARK_GRAY);
+    gui_fill_rect((x+8), (y+19), 18, 2, COLOR_DARK_GRAY);
+    gui_fill_rect((x+8), (y+24), 20, 2, COLOR_DARK_GRAY);
+}
+
+// Desenha ícone de calculadora
+void draw_icon_calc(int x, int y, int selected) {
+    int bg = COLOR_PANEL;
+    if (selected == 1) { bg = COLOR_ACCENT; }
+    gui_fill_round_rect(x, y, 40, 40, 8, bg);
+    gui_fill_rect((x+6), (y+5), 28, 30, COLOR_LIGHT_GRAY);
+    gui_fill_rect((x+7), (y+6), 26, 8, COLOR_ACCENT2);
+    // Botões
+    gui_fill_rect((x+8), (y+17), 6, 5, COLOR_WHITE);
+    gui_fill_rect((x+17), (y+17), 6, 5, COLOR_WHITE);
+    gui_fill_rect((x+26), (y+17), 6, 5, COLOR_ACCENT2);
+    gui_fill_rect((x+8), (y+25), 6, 5, COLOR_WHITE);
+    gui_fill_rect((x+17), (y+25), 6, 5, COLOR_WHITE);
+    gui_fill_rect((x+26), (y+25), 6, 5, COLOR_WHITE);
+}
+
+// Desenha ícone de gerenciador de arquivos (pasta)
+void draw_icon_files(int x, int y, int selected) {
+    int bg = COLOR_PANEL;
+    if (selected == 1) { bg = COLOR_ACCENT; }
+    gui_fill_round_rect(x, y, 40, 40, 8, bg);
+    // Pasta
+    gui_fill_round_rect((x+5), (y+15), 30, 20, 3, COLOR_YELLOW);
+    gui_fill_rect((x+5), (y+10), 12, 8, COLOR_YELLOW);
+    gui_fill_round_rect((x+5), (y+13), 30, 22, 3, COLOR_ORANGE);
+}
+
+// Desenha o botão Zorin (início)
+void draw_zorin_button(int x, int y) {
+    gui_fill_round_rect(x, y, 44, 44, 10, COLOR_ACCENT);
+    // Z letter
+    gui_draw_char((x+14), (y+14), 90, COLOR_WHITE, 0);
+}
+
+// Desenha relógio simples
+void draw_clock(int x, int y) {
+    // Background
+    gui_fill_rect(x, y, 80, 30, COLOR_TASKBAR);
+    
+    // Renderiza HH:MM
+    int h10 = clock_hours / 10;
+    int h1 = clock_hours % 10;
+    int m10 = clock_mins / 10;
+    int m1 = clock_mins % 10;
+    
+    gui_draw_char(x, (y+7), (h10 + 48), COLOR_WHITE, COLOR_TASKBAR);
+    gui_draw_char((x+9), (y+7), (h1 + 48), COLOR_WHITE, COLOR_TASKBAR);
+    gui_draw_char((x+17), (y+7), 58, COLOR_ACCENT, COLOR_TASKBAR);  // ':'
+    gui_draw_char((x+22), (y+7), (m10 + 48), COLOR_WHITE, COLOR_TASKBAR);
+    gui_draw_char((x+31), (y+7), (m1 + 48), COLOR_WHITE, COLOR_TASKBAR);
+}
+
+// Atualiza relógio com tick (chamado a cada frame ~60fps)
+void taskbar_tick() {
+    tick_count = tick_count + 1;
+    if (tick_count >= 60) {
+        tick_count = 0;
+        clock_secs = clock_secs + 1;
+        if (clock_secs >= 60) {
+            clock_secs = 0;
+            clock_mins = clock_mins + 1;
+            if (clock_mins >= 60) {
+                clock_mins = 0;
+                clock_hours = clock_hours + 1;
+                if (clock_hours >= 24) {
+                    clock_hours = 0;
+                }
+            }
+        }
+    }
+}
+
+// Desenha a barra de tarefas completa
+void taskbar_draw(int focused_type) {
+    int ty = TASKBAR_Y;
+    
+    // Fundo da taskbar
+    gui_fill_rect(0, ty, SCREEN_W, TASKBAR_H, COLOR_TASKBAR);
+    
+    // Linha de separação no topo
+    gui_draw_line(0, ty, SCREEN_W, ty, COLOR_ACCENT);
+    
+    // Botão Zorin (início)
+    draw_zorin_button(4, ty + 2);
+    
+    // Separador
+    gui_draw_line(52, (ty+8), 52, (ty + TASKBAR_H - 8), COLOR_DARK_GRAY);
+    
+    // Ícones de apps na dock
+    int sel_term = 0;
+    int sel_edit = 0;
+    int sel_calc = 0;
+    int sel_files = 0;
+    if (focused_type == 0) { sel_term = 1; }
+    if (focused_type == 1) { sel_edit = 1; }
+    if (focused_type == 2) { sel_calc = 1; }
+    if (focused_type == 3) { sel_files = 1; }
+    
+    draw_icon_terminal(58, ty + 4, sel_term);
+    draw_icon_editor(104, ty + 4, sel_edit);
+    draw_icon_calc(150, ty + 4, sel_calc);
+    draw_icon_files(196, ty + 4, sel_files);
+    
+    // Separador
+    gui_draw_line(242, (ty+8), 242, (ty + TASKBAR_H - 8), COLOR_DARK_GRAY);
+    
+    // Janelas abertas na taskbar (miniaturas)
+    int btn_x = 248;
+    for (int i = 0; i < WM_MAX_WINDOWS; i = i + 1) {
+        int base = i * WM_FIELDS;
+        if (WM_TABLE[base + 0] == 1) {
+            int title_addr = WM_TABLE[base + 5];
+            int title_len = WM_TABLE[base + 6];
+            
+            int btn_bg = COLOR_DARK_GRAY;
+            if (i == wm_focused) {
+                btn_bg = COLOR_ACCENT;
+            }
+            gui_fill_round_rect(btn_x, (ty + 8), 110, 32, 6, btn_bg);
+            gui_draw_string((btn_x + 8), (ty + 16), title_addr, title_len, COLOR_WHITE, 0);
+            
+            btn_x = btn_x + 116;
+        }
+    }
+    
+    // Relógio no canto direito
+    draw_clock(SCREEN_W - 90, ty + 9);
+    
+    // Indicador de idioma / status
+    gui_draw_char((SCREEN_W - 110), (ty + 15), 80, COLOR_TEXT_DIM, 0); // 'P' de PT
+    gui_draw_char((SCREEN_W - 102), (ty + 15), 84, COLOR_TEXT_DIM, 0); // 'T'
+}
+
+// Verifica se mouse clicou em algum ícone da taskbar
+// Retorna: 0=terminal, 1=editor, 2=calc, 3=files, -1=nenhum
+int taskbar_handle_click(int mx, int my) {
+    if (my < TASKBAR_Y) { return 0 - 1; } // Clique fora da taskbar
+    
+    // Ícone terminal
+    if (gui_point_in_rect(mx, my, 58, TASKBAR_Y + 4, 40, 40) == 1) { return 0; }
+    // Ícone editor
+    if (gui_point_in_rect(mx, my, 104, TASKBAR_Y + 4, 40, 40) == 1) { return 1; }
+    // Ícone calc
+    if (gui_point_in_rect(mx, my, 150, TASKBAR_Y + 4, 40, 40) == 1) { return 2; }
+    // Ícone files
+    if (gui_point_in_rect(mx, my, 196, TASKBAR_Y + 4, 40, 40) == 1) { return 3; }
+    
+    // Botões de janelas abertas
+    int btn_x = 248;
+    for (int i = 0; i < WM_MAX_WINDOWS; i = i + 1) {
+        if (WM_TABLE[i * WM_FIELDS + 0] == 1) {
+            if (gui_point_in_rect(mx, my, btn_x, TASKBAR_Y + 8, 110, 32) == 1) {
+                if (WM_TABLE[i * WM_FIELDS + 8] == 1) {
+                    wm_restore(i);
+                } else {
+                    wm_set_focus(i);
+                }
+                return 0 - 1;
+            }
+            btn_x = btn_x + 116;
+        }
+    }
+    
+    return 0 - 1;
+}

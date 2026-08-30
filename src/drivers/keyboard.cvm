@@ -1,0 +1,197 @@
+// =========================================================
+// DRIVER DE TECLADO GUI - Zorin VM OS
+// Scancodes do minifb -> ASCII com suporte a modificadores
+// =========================================================
+import "vga.cvm";
+
+int shift_pressed = 0;
+int ctrl_pressed = 0;
+int alt_pressed = 0;
+
+int KEY_BUFFER_SIZE = 128;
+int[128] key_buffer;
+int buffer_head = 0;
+int buffer_tail = 0;
+
+// Teclas especiais (códigos > 200)
+int KEY_UP    = 201;
+int KEY_DOWN  = 202;
+int KEY_LEFT  = 203;
+int KEY_RIGHT = 204;
+int KEY_F1    = 210;
+int KEY_F2    = 211;
+int KEY_F3    = 212;
+int KEY_F4    = 213;
+int KEY_F5    = 214;
+int KEY_ESC   = 27;
+int KEY_TAB   = 9;
+int KEY_ENTER = 10;
+int KEY_BKSP  = 8;
+int KEY_DEL   = 127;
+int KEY_HOME  = 205;
+int KEY_END   = 206;
+
+void push_key(int ascii) {
+    int next_head = (buffer_head + 1) % KEY_BUFFER_SIZE;
+    if (next_head != buffer_tail) {
+        key_buffer[buffer_head] = ascii;
+        buffer_head = next_head;
+    }
+}
+
+int pop_key() {
+    if (buffer_head == buffer_tail) {
+        return 0; // Buffer vazio
+    }
+    int ascii = key_buffer[buffer_tail];
+    buffer_tail = (buffer_tail + 1) % KEY_BUFFER_SIZE;
+    return ascii;
+}
+
+int peek_key() {
+    if (buffer_head == buffer_tail) {
+        return 0;
+    }
+    return key_buffer[buffer_tail];
+}
+
+int map_scancode_to_ascii(int scancode) {
+    // Letras A-Z (scancodes 10 a 35)
+    if (scancode > 9 && scancode < 36) {
+        if (shift_pressed == 1) {
+            return scancode - 10 + 65; // 'A' = 65
+        } else {
+            return scancode - 10 + 97; // 'a' = 97
+        }
+    }
+    
+    // Números 0-9 (scancodes 0 a 9)
+    if (scancode >= 0 && scancode < 10) {
+        if (shift_pressed == 1) {
+            // Shift + numbers = symbols
+            if (scancode == 1) { return 33; }  // !
+            if (scancode == 2) { return 64; }  // @
+            if (scancode == 3) { return 35; }  // #
+            if (scancode == 4) { return 36; }  // $
+            if (scancode == 5) { return 37; }  // %
+            if (scancode == 6) { return 94; }  // ^
+            if (scancode == 7) { return 38; }  // &
+            if (scancode == 8) { return 42; }  // *
+            if (scancode == 9) { return 40; }  // (
+            if (scancode == 0) { return 41; }  // )
+        }
+        return scancode + 48; // '0' = 48
+    }
+    
+    // Teclas especiais
+    if (scancode == 77) { return 32; }  // Espaço
+    if (scancode == 69) { return 10; }  // Enter
+    if (scancode == 66) { return 8;  }  // Backspace
+    if (scancode == 1)  { return 27; }  // Escape
+    if (scancode == 67) { return 9;  }  // Tab
+    
+    // Setas
+    if (scancode == 72) { return 201; } // Up
+    if (scancode == 80) { return 202; } // Down
+    if (scancode == 75) { return 203; } // Left
+    if (scancode == 77) { return 204; } // Right (conflito com espaço - minifb usa 77 pra espaço)
+    
+    // Símbolos
+    if (scancode == 59) {
+        if (shift_pressed == 1) { return 95; } // _
+        return 45; // -
+    }
+    if (scancode == 60) {
+        if (shift_pressed == 1) { return 43; } // +
+        return 61; // =
+    }
+    if (scancode == 62) {
+        if (shift_pressed == 1) { return 62; } // >
+        return 46; // .
+    }
+    if (scancode == 63) {
+        if (shift_pressed == 1) { return 63; } // ?
+        return 47; // /
+    }
+    if (scancode == 40) {
+        if (shift_pressed == 1) { return 34; } // "
+        return 39; // '
+    }
+    if (scancode == 56) {
+        if (shift_pressed == 1) { return 124; } // |
+        return 92; // backslash
+    }
+    if (scancode == 51) {
+        if (shift_pressed == 1) { return 58; } // :
+        return 59; // ;
+    }
+    if (scancode == 26) {
+        if (shift_pressed == 1) { return 123; } // {
+        return 91; // [
+    }
+    if (scancode == 27) {
+        if (shift_pressed == 1) { return 125; } // }
+        return 93; // ]
+    }
+    if (scancode == 41) {
+        if (shift_pressed == 1) { return 126; } // ~
+        return 96; // `
+    }
+    
+    // F-keys
+    if (scancode == 59) { return 210; } // F1
+    if (scancode == 60) { return 211; } // F2
+    
+    // Delete
+    if (scancode == 83) { return 127; } // Del
+    
+    return 0; // Unknown
+}
+
+interrupt void keyboard_interrupt_handler() {
+    int raw_scancode = 0;
+    asm { "IN {raw_scancode}, 96" } // 96 = 0x60
+    
+    int is_release = 0;
+    if (raw_scancode > 127) {
+        is_release = 1;
+        raw_scancode = raw_scancode - 128;
+    }
+    
+    // Shift (82=RShift, 83=LShift em minifb)
+    if (raw_scancode == 82 || raw_scancode == 83) {
+        if (is_release == 1) {
+            shift_pressed = 0;
+        } else {
+            shift_pressed = 1;
+        }
+        return;
+    }
+    
+    // Ctrl (71=RCtrl, 70=LCtrl)
+    if (raw_scancode == 70 || raw_scancode == 71) {
+        if (is_release == 1) {
+            ctrl_pressed = 0;
+        } else {
+            ctrl_pressed = 1;
+        }
+        return;
+    }
+    
+    // Alt (68=LAlt, 69=RAlt)
+    if (raw_scancode == 68 || raw_scancode == 69) {
+        if (is_release == 1) {
+            alt_pressed = 0;
+        } else {
+            alt_pressed = 1;
+        }
+        return;
+    }
+    
+    if (is_release == 0) {
+        int ascii = map_scancode_to_ascii(raw_scancode);
+        if (ascii != 0) {
+            push_key(ascii);
+        }
+    }
+}

@@ -1,0 +1,321 @@
+// =========================================================
+// APLICATIVO: TERMINAL - Zorin VM OS
+// Terminal emulador com shell integrado
+// =========================================================
+import "../drivers/vga.cvm";
+import "../drivers/keyboard.cvm";
+import "../kernel/vfs.cvm";
+
+// Estado do terminal
+int TERM_COLS = 80;
+int TERM_ROWS = 24;
+int TERM_CHAR_W = 8;
+int TERM_CHAR_H = 16;
+
+int[2400] term_screen; // Buffer de caracteres
+int[2400] term_colors; // Buffer de cores por caractere
+int term_col = 0;
+int term_row = 0;
+int term_x_offset = 0;
+int term_y_offset = 0;
+int term_w = 640;
+int term_h = 400;
+
+int[200] term_input_buf;
+int term_input_len = 0;
+int term_cmd_active = 0;
+
+// Cores do terminal
+int TERM_COLOR_NORMAL = 0xFFEEEEEE;
+int TERM_COLOR_PROMPT = 0xFF50FA7B;  // Verde
+int TERM_COLOR_ERROR  = 0xFFFF5555;  // Vermelho
+int TERM_COLOR_INFO   = 0xFF8BE9FD;  // Ciano
+int TERM_COLOR_CMD    = 0xFFF1FA8C;  // Amarelo
+int term_cols_actual = 80;
+int term_rows_actual = 24;
+
+void term_init(int x, int y, int w, int h) {
+    term_x_offset = x;
+    term_y_offset = y;
+    term_w = w;
+    term_h = h;
+    term_col = 0;
+    term_row = 0;
+    term_input_len = 0;
+    term_cols_actual = w / TERM_CHAR_W;
+    term_rows_actual = h / TERM_CHAR_H;
+    
+    // Limpa buffer
+    for (int i = 0; i < 80 * 30; i = i + 1) {
+        term_screen[i] = 32;
+        term_colors[i] = TERM_COLOR_NORMAL;
+    }
+}
+
+// variables moved to top
+
+void term_scroll() {
+    for (int r = 1; r < term_rows_actual; r = r + 1) {
+        for (int c = 0; c < term_cols_actual; c = c + 1) {
+            int dst = (r - 1) * TERM_COLS + c;
+            int src = r * TERM_COLS + c;
+            term_screen[dst] = term_screen[src];
+            term_colors[dst] = term_colors[src];
+        }
+    }
+    // Limpa ultima linha
+    for (int c = 0; c < term_cols_actual; c = c + 1) {
+        term_screen[(term_rows_actual - 1) * TERM_COLS + c] = 32;
+        term_colors[(term_rows_actual - 1) * TERM_COLS + c] = TERM_COLOR_NORMAL;
+    }
+    term_row = term_rows_actual - 1;
+}
+
+void term_put_char(int ch, int color) {
+    if (ch == 10) { // newline
+        term_col = 0;
+        term_row = term_row + 1;
+        if (term_row >= term_rows_actual) {
+            term_scroll();
+        }
+        return;
+    }
+    if (ch == 8) { // backspace
+        if (term_col > 0) {
+            term_col = term_col - 1;
+            term_screen[term_row * TERM_COLS + term_col] = 32;
+        }
+        return;
+    }
+    if (ch >= 32) {
+        term_screen[term_row * TERM_COLS + term_col] = ch;
+        term_colors[term_row * TERM_COLS + term_col] = color;
+        term_col = term_col + 1;
+        if (term_col >= term_cols_actual) {
+            term_col = 0;
+            term_row = term_row + 1;
+            if (term_row >= term_rows_actual) {
+                term_scroll();
+            }
+        }
+    }
+}
+
+void term_print(int ch) {
+    term_put_char(ch, TERM_COLOR_NORMAL);
+}
+
+void term_print_colored(int ch, int color) {
+    term_put_char(ch, color);
+}
+
+void term_puts(*int str, int len, int color) {
+    for (int i = 0; i < len; i = i + 1) {
+        term_put_char(str[i], color);
+    }
+}
+
+void term_newline() {
+    term_put_char(10, TERM_COLOR_NORMAL);
+}
+
+void term_print_int(int n) {
+    if (n == 0) {
+        term_put_char(48, TERM_COLOR_NORMAL);
+        return;
+    }
+    int[12] digits;
+    int dlen = 0;
+    while (n > 0) {
+        digits[dlen] = (n % 10) + 48;
+        dlen = dlen + 1;
+        n = n / 10;
+    }
+    // Inverte
+    for (int i = dlen - 1; i >= 0; i = i - 1) {
+        term_put_char(digits[i], TERM_COLOR_NORMAL);
+    }
+}
+
+// Renderiza o terminal na tela
+void term_render() {
+    int bg = 0xFF0D0D1A;
+    gui_fill_rect(term_x_offset, term_y_offset, term_w, term_h, bg);
+    
+    for (int r = 0; r < term_rows_actual; r = r + 1) {
+        for (int c = 0; c < term_cols_actual; c = c + 1) {
+            int ch = term_screen[r * TERM_COLS + c];
+            int color = term_colors[r * TERM_COLS + c];
+            int px = term_x_offset + c * TERM_CHAR_W;
+            int py = term_y_offset + r * TERM_CHAR_H;
+            if (ch != 32) {
+                gui_draw_char(px, py, ch, color, 0);
+            }
+        }
+    }
+    
+    // Cursor piscante
+    int cframe = 0;
+    asm { "IN {cframe}, 980" } // Usa porta 980 para frame counter
+    if ((cframe / 30) % 2 == 0) {
+        int cpx = term_x_offset + term_col * TERM_CHAR_W;
+        int cpy = term_y_offset + term_row * TERM_CHAR_H;
+        gui_fill_rect(cpx, (cpy + 14), 8, 2, 0xFFBBBBCC);
+    }
+}
+
+// Prompt do terminal
+void term_show_prompt() {
+    // "zorin@vm$ "
+    int[10] prompt;
+    prompt[0] = 122; // z
+    prompt[1] = 111; // o
+    prompt[2] = 114; // r
+    prompt[3] = 105; // i
+    prompt[4] = 110; // n
+    prompt[5] = 64;  // @
+    prompt[6] = 118; // v
+    prompt[7] = 109; // m
+    prompt[8] = 36;  // $
+    prompt[9] = 32;  // space
+    term_puts(prompt, 10, TERM_COLOR_PROMPT);
+}
+
+// Executa comando do shell interno
+void term_exec_command(int cmd_len) {
+    // Verifica comando "help"
+    int[4] cmd_help;
+    cmd_help[0] = 104; cmd_help[1] = 101; cmd_help[2] = 108; cmd_help[3] = 112;
+    if (vfs_strcmp(term_input_buf, cmd_len, cmd_help, 4) == 1) {
+        int[50] msg;
+        // "Available commands:"
+        msg[0]=65; msg[1]=118; msg[2]=97; msg[3]=105; msg[4]=108; msg[5]=97; msg[6]=98; msg[7]=108; msg[8]=101; 
+        msg[9]=32; msg[10]=99; msg[11]=111; msg[12]=109; msg[13]=109; msg[14]=97; msg[15]=110; msg[16]=100; msg[17]=115; msg[18]=58;
+        term_puts(msg, 19, TERM_COLOR_INFO);
+        term_newline();
+        // "  help  clear  ls  touch  cat  write  echo  uname"
+        int[50] cmds;
+        cmds[0]=32; cmds[1]=32; cmds[2]=104; cmds[3]=101; cmds[4]=108; cmds[5]=112;
+        cmds[6]=32; cmds[7]=32; cmds[8]=99; cmds[9]=108; cmds[10]=101; cmds[11]=97; cmds[12]=114;
+        cmds[13]=32; cmds[14]=32; cmds[15]=108; cmds[16]=115;
+        cmds[17]=32; cmds[18]=32; cmds[19]=116; cmds[20]=111; cmds[21]=117; cmds[22]=99; cmds[23]=104;
+        cmds[24]=32; cmds[25]=32; cmds[26]=99; cmds[27]=97; cmds[28]=116;
+        cmds[29]=32; cmds[30]=32; cmds[31]=117; cmds[32]=110; cmds[33]=97; cmds[34]=109; cmds[35]=101;
+        term_puts(cmds, 36, TERM_COLOR_CMD);
+        term_newline();
+        return;
+    }
+    
+    // Comando "clear"
+    int[5] cmd_clear;
+    cmd_clear[0]=99; cmd_clear[1]=108; cmd_clear[2]=101; cmd_clear[3]=97; cmd_clear[4]=114;
+    if (vfs_strcmp(term_input_buf, cmd_len, cmd_clear, 5) == 1) {
+        for (int i = 0; i < 80 * 30; i = i + 1) {
+            term_screen[i] = 32;
+            term_colors[i] = TERM_COLOR_NORMAL;
+        }
+        term_col = 0;
+        term_row = 0;
+        return;
+    }
+    
+    // Comando "ls"
+    int[2] cmd_ls;
+    cmd_ls[0]=108; cmd_ls[1]=115;
+    if (vfs_strcmp(term_input_buf, cmd_len, cmd_ls, 2) == 1) {
+        int num_files = VFS_START[0];
+        if (num_files == 0) {
+            int[12] empty;
+            empty[0]=40; empty[1]=110; empty[2]=111; empty[3]=32; empty[4]=102; empty[5]=105;
+            empty[6]=108; empty[7]=101; empty[8]=115; empty[9]=41;
+            term_puts(empty, 10, TERM_COLOR_INFO);
+            term_newline();
+            return;
+        }
+        for (int i = 0; i < num_files; i = i + 1) {
+            int entry_base = 2 + (i * 18);
+            int name_len = VFS_START[entry_base + 15];
+            for (int j = 0; j < name_len; j = j + 1) {
+                term_put_char(VFS_START[entry_base + j], TERM_COLOR_CMD);
+            }
+            term_put_char(32, TERM_COLOR_NORMAL);
+        }
+        term_newline();
+        return;
+    }
+    
+    // Comando "uname"
+    int[5] cmd_uname;
+    cmd_uname[0]=117; cmd_uname[1]=110; cmd_uname[2]=97; cmd_uname[3]=109; cmd_uname[4]=101;
+    if (vfs_strcmp(term_input_buf, cmd_len, cmd_uname, 5) == 1) {
+        int[25] uname;
+        // "ZorinVM 1.0 (CVM Kernel)"
+        uname[0]=90; uname[1]=111; uname[2]=114; uname[3]=105; uname[4]=110;
+        uname[5]=86; uname[6]=77; uname[7]=32; uname[8]=49; uname[9]=46;
+        uname[10]=48; uname[11]=32;
+        term_puts(uname, 12, TERM_COLOR_INFO);
+        term_newline();
+        return;
+    }
+    
+    // Comando desconhecido
+    int[15] unknown;
+    // "command not found"
+    unknown[0]=99; unknown[1]=111; unknown[2]=109; unknown[3]=109; unknown[4]=97; unknown[5]=110;
+    unknown[6]=100; unknown[7]=32; unknown[8]=110; unknown[9]=111; unknown[10]=116; 
+    unknown[11]=32; unknown[12]=102; unknown[13]=111; unknown[14]=117; unknown[15]=110; unknown[16]=100;
+    // Echo do comando
+    term_puts(term_input_buf, cmd_len, TERM_COLOR_ERROR);
+    term_put_char(58, TERM_COLOR_ERROR);
+    term_put_char(32, TERM_COLOR_NORMAL);
+    term_puts(unknown, 17, TERM_COLOR_ERROR);
+    term_newline();
+}
+
+// Lida com entrada de teclado no terminal
+void term_handle_key(int key) {
+    if (key == 10) { // Enter
+        term_newline();
+        if (term_input_len > 0) {
+            term_exec_command(term_input_len);
+        }
+        term_input_len = 0;
+        term_show_prompt();
+    } if (key == 8) { // Backspace
+        if (term_input_len > 0) {
+            term_input_len = term_input_len - 1;
+            term_put_char(8, TERM_COLOR_NORMAL);
+        }
+    } if (key >= 32 && key < 127) {
+        if (term_input_len < 199) {
+            term_input_buf[term_input_len] = key;
+            term_input_len = term_input_len + 1;
+            term_put_char(key, TERM_COLOR_NORMAL);
+        }
+    }
+}
+
+// Inicializa o terminal com banner
+void term_start() {
+    // Banner de boas vindas
+    int[20] banner;
+    // "ZorinVM Terminal"
+    banner[0]=90; banner[1]=111; banner[2]=114; banner[3]=105; banner[4]=110;
+    banner[5]=86; banner[6]=77; banner[7]=32; banner[8]=84; banner[9]=101;
+    banner[10]=114; banner[11]=109; banner[12]=105; banner[13]=110; banner[14]=97; banner[15]=108;
+    term_puts(banner, 16, TERM_COLOR_INFO);
+    term_newline();
+    
+    int[25] version;
+    // "Version 1.0 - Type 'help'"
+    version[0]=86; version[1]=101; version[2]=114; version[3]=115; version[4]=105;
+    version[5]=111; version[6]=110; version[7]=32; version[8]=49; version[9]=46;
+    version[10]=48; version[11]=32; version[12]=45; version[13]=32; version[14]=84;
+    version[15]=121; version[16]=112; version[17]=101; version[18]=32; version[19]=39;
+    version[20]=104; version[21]=101; version[22]=108; version[23]=112; version[24]=39;
+    term_puts(version, 25, TERM_COLOR_NORMAL);
+    term_newline();
+    term_newline();
+    
+    term_show_prompt();
+}

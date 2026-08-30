@@ -1,0 +1,159 @@
+// =========================================================
+// DESKTOP / WALLPAPER - Zorin VM OS
+// Fundo do desktop com gradiente e ícones
+// =========================================================
+import "../drivers/vga.cvm";
+
+// Desenha o wallpaper do desktop (gradiente estilo Zorin OS)
+void desktop_draw_wallpaper() {
+    // Gradiente do desktop: azul escuro para roxo
+    // Usando linhas horizontais com cores interpoladas
+    int total_h = SCREEN_H - 48;
+    
+    for (int y = 0; y < total_h; y = y + 4) {
+        // Interpolação: 0x1A1A2E -> 0x16213E -> 0x0F3460
+        // Dividimos em 3 zonas
+        int r = 0;
+        int g = 0;
+        int b = 0;
+        
+        int zone = y * 3 / total_h;
+        
+        if (zone == 0) {
+            // 0x1A1A2E -> 0x16213E
+            int t = y * 3 % total_h;
+            int inv_t = total_h - t;
+            r = (0x1A * inv_t + 0x16 * t) / total_h;
+            g = (0x1A * inv_t + 0x21 * t) / total_h;
+            b = (0x2E * inv_t + 0x3E * t) / total_h;
+        }
+        if (zone == 1) {
+            r = 0x16;
+            g = 0x21;
+            b = 0x3E;
+        }
+        if (zone == 2) {
+            // 0x16213E -> 0x0F3460
+            int t2 = (y * 3 % total_h);
+            int inv_t2 = total_h - t2;
+            r = (0x16 * inv_t2 + 0x0F * t2) / total_h;
+            g = (0x21 * inv_t2 + 0x34 * t2) / total_h;
+            b = (0x3E * inv_t2 + 0x60 * t2) / total_h;
+        }
+        
+        int color = 0xFF000000 + r * 65536 + g * 256 + b;
+        gui_fill_rect(0, y, SCREEN_W, 4, color);
+    }
+    
+    // Efeito visual: círculo de gradiente no centro (estrela/orbe Zorin)
+    // Círculo externo grande translúcido
+    gui_fill_round_rect(390, 200, 500, 300, 150, 0xFF111122);
+    
+    // Círculo interno brilhante
+    gui_fill_round_rect(490, 230, 300, 240, 120, 0xFF16213E);
+    
+    // Orbe central
+    gui_fill_round_rect(570, 270, 140, 160, 70, 0xFF1E2A4A);
+    
+    // Linhas de grade decorativas (estilo tech)
+    int grid_color = 0xFF0A1020;
+    for (int gx = 0; gx < SCREEN_W; gx = gx + 60) {
+        gui_draw_line(gx, 0, gx, total_h, grid_color);
+    }
+    for (int gy = 0; gy < total_h; gy = gy + 60) {
+        gui_draw_line(0, gy, SCREEN_W, gy, grid_color);
+    }
+    
+    // Logo/texto no centro
+    // "ZorinVM OS"
+    int lx = 540;
+    int ly = 340;
+    // Z
+    gui_draw_char(lx, ly, 90, COLOR_ACCENT, 0);
+    gui_draw_char((lx+8), ly, 111, COLOR_ACCENT, 0);
+    gui_draw_char((lx+16), ly, 114, COLOR_ACCENT, 0);
+    gui_draw_char((lx+24), ly, 105, COLOR_ACCENT, 0);
+    gui_draw_char((lx+32), ly, 110, COLOR_ACCENT, 0);
+    gui_draw_char((lx+40), ly, 86, COLOR_ACCENT, 0);
+    gui_draw_char((lx+48), ly, 77, COLOR_ACCENT, 0);
+    gui_draw_char((lx+56), ly, 32, 0, 0);
+    gui_draw_char((lx+64), ly, 79, COLOR_ACCENT2, 0);
+    gui_draw_char((lx+72), ly, 83, COLOR_ACCENT2, 0);
+    
+    // Versão
+    gui_draw_char(lx, (ly + 20), 118, COLOR_TEXT_DIM, 0); // v
+    gui_draw_char((lx+8), (ly+20), 49, COLOR_TEXT_DIM, 0); // 1
+    gui_draw_char((lx+16), (ly+20), 46, COLOR_TEXT_DIM, 0); // .
+    gui_draw_char((lx+24), (ly+20), 48, COLOR_TEXT_DIM, 0); // 0
+    
+    // Ícones do desktop
+    desktop_draw_desktop_icons();
+}
+
+// Desenha ícones no desktop
+void desktop_draw_desktop_icons() {
+    // Coluna de ícones no lado esquerdo (estilo Zorin)
+    int ix = 20;
+    int iy = 20;
+    int icon_size = 56;
+    int icon_gap = 80;
+    
+    // Ícone: Terminal
+    gui_fill_round_rect(ix, iy, icon_size, icon_size, 12, 0xFF252540);
+    gui_draw_char((ix+8), (iy+18), 62, COLOR_GREEN, 0);    // >
+    gui_draw_char((ix+20), (iy+18), 95, COLOR_WHITE, 0);   // _
+    gui_draw_char((ix+10), (iy+38), 84, COLOR_TEXT_DIM, 0); // T
+    gui_draw_char((ix+18), (iy+38), 101, COLOR_TEXT_DIM, 0); // e
+    gui_draw_char((ix+26), (iy+38), 114, COLOR_TEXT_DIM, 0); // r
+    gui_draw_char((ix+34), (iy+38), 109, COLOR_TEXT_DIM, 0); // m
+    iy = iy + icon_gap;
+    
+    // Ícone: Editor
+    gui_fill_round_rect(ix, iy, icon_size, icon_size, 12, 0xFF252540);
+    gui_fill_rect((ix+12), (iy+10), 32, 36, COLOR_WHITE);
+    gui_fill_rect((ix+14), (iy+18), 28, 2, COLOR_DARK_GRAY);
+    gui_fill_rect((ix+14), (iy+23), 22, 2, COLOR_DARK_GRAY);
+    gui_fill_rect((ix+14), (iy+28), 24, 2, COLOR_DARK_GRAY);
+    gui_draw_char((ix+10), (iy+50), 69, COLOR_TEXT_DIM, 0); // E
+    gui_draw_char((ix+18), (iy+50), 100, COLOR_TEXT_DIM, 0); // d
+    gui_draw_char((ix+26), (iy+50), 105, COLOR_TEXT_DIM, 0); // i
+    gui_draw_char((ix+34), (iy+50), 116, COLOR_TEXT_DIM, 0); // t
+    iy = iy + icon_gap;
+    
+    // Ícone: Calculadora  
+    gui_fill_round_rect(ix, iy, icon_size, icon_size, 12, 0xFF252540);
+    gui_fill_rect((ix+8), (iy+8), 40, 40, COLOR_LIGHT_GRAY);
+    gui_fill_rect((ix+9), (iy+9), 38, 12, COLOR_ACCENT);
+    gui_fill_rect((ix+12), (iy+24), 8, 6, COLOR_WHITE);
+    gui_fill_rect((ix+24), (iy+24), 8, 6, COLOR_WHITE);
+    gui_fill_rect((ix+36), (iy+24), 8, 6, COLOR_ACCENT2);
+    gui_fill_rect((ix+12), (iy+34), 8, 6, COLOR_WHITE);
+    gui_fill_rect((ix+24), (iy+34), 8, 6, COLOR_WHITE);
+    gui_fill_rect((ix+36), (iy+34), 8, 6, COLOR_WHITE);
+    gui_draw_char((ix+10), (iy+50), 67, COLOR_TEXT_DIM, 0); // C
+    gui_draw_char((ix+18), (iy+50), 97, COLOR_TEXT_DIM, 0); // a
+    gui_draw_char((ix+26), (iy+50), 108, COLOR_TEXT_DIM, 0); // l
+    gui_draw_char((ix+34), (iy+50), 99, COLOR_TEXT_DIM, 0); // c
+    iy = iy + icon_gap;
+    
+    // Ícone: Arquivos
+    gui_fill_round_rect(ix, iy, icon_size, icon_size, 12, 0xFF252540);
+    gui_fill_round_rect((ix+6), (iy+20), 44, 28, 4, COLOR_ORANGE);
+    gui_fill_rect((ix+6), (iy+14), 18, 8, COLOR_ORANGE);
+    gui_fill_round_rect((ix+6), (iy+18), 44, 30, 4, COLOR_YELLOW);
+    gui_draw_char((ix+10), (iy+50), 70, COLOR_TEXT_DIM, 0); // F
+    gui_draw_char((ix+18), (iy+50), 105, COLOR_TEXT_DIM, 0); // i
+    gui_draw_char((ix+26), (iy+50), 108, COLOR_TEXT_DIM, 0); // l
+    gui_draw_char((ix+34), (iy+50), 101, COLOR_TEXT_DIM, 0); // e
+    gui_draw_char((ix+42), (iy+50), 115, COLOR_TEXT_DIM, 0); // s
+}
+
+// Wallpaper já foi gerado, apenas atualiza ícones se necessário
+int wallpaper_drawn = 0;
+
+void desktop_render_frame() {
+    if (wallpaper_drawn == 0) {
+        desktop_draw_wallpaper();
+        wallpaper_drawn = 1;
+    }
+}

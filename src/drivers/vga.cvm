@@ -1,0 +1,113 @@
+// =========================================================
+// DRIVER VGA GUI AVANÇADO - Zorin VM OS
+// Suporta resolução 1280x800, cores RGB, primitivas gráficas
+// NOTA: Os novos opcodes são emitidos via asm{} blocks
+// =========================================================
+
+// Constantes da tela
+int SCREEN_W = 1280;
+int SCREEN_H = 800;
+
+// Paleta de cores do Zorin OS (estilo moderno)
+int COLOR_BG          = 0x1A1A2E;  // Fundo escuro azul-marinho (sem alpha prefix)
+int COLOR_PANEL       = 0x16213E;
+int COLOR_PANEL_LIGHT = 0x0F3460;
+int COLOR_ACCENT      = 0x533483;  // Roxo accent
+int COLOR_ACCENT2     = 0xE94560;  // Rosa/vermelho accent
+int COLOR_WIN_BG      = 0x1E1E2E;  // Fundo de janelas
+int COLOR_WIN_TITLE   = 0x2A2A3E;  // Barra de título
+int COLOR_WHITE       = 0xFFFFFF;  // Branco
+int COLOR_GRAY        = 0x808080;  // Cinza
+int COLOR_DARK_GRAY   = 0x3A3A4E;  // Cinza escuro
+int COLOR_LIGHT_GRAY  = 0xB0B0C0;  // Cinza claro
+int COLOR_GREEN       = 0x50FA7B;  // Verde
+int COLOR_YELLOW      = 0xF1FA8C;  // Amarelo
+int COLOR_RED         = 0xFF5555;  // Vermelho
+int COLOR_CYAN        = 0x8BE9FD;  // Ciano
+int COLOR_ORANGE      = 0xFFB86C;  // Laranja
+int COLOR_TASKBAR     = 0x12121E;  // Taskbar muito escura
+int COLOR_HOVER       = 0x2D2D4E;  // Hover state
+int COLOR_BTN_CLOSE   = 0xFF5F56;  // Botão fechar
+int COLOR_BTN_MIN     = 0xFFBD2E;  // Botão minimizar
+int COLOR_BTN_MAX     = 0x27C93F;  // Botão maximizar
+int COLOR_TEXT_DIM    = 0x888899;  // Texto dimmed
+int COLOR_SELECTION   = 0x533483;  // Seleção
+
+// Alpha prefix para cores opacas (0xFF000000)
+int ALPHA_FULL = 0xFF000000;
+
+// Monta cor com alpha completo
+int make_color(int rgb) {
+    return ALPHA_FULL + rgb;
+}
+
+// Função para limpar tela com cor de fundo
+void gui_clear() {
+    int c = make_color(COLOR_BG);
+    asm { "CLEARSCREEN {c}" }
+}
+
+// Função para preencher retângulo
+void gui_fill_rect(int x, int y, int w, int h, int color) {
+    asm { "FILLRECT {x} {y} {w} {h} {color}" }
+}
+
+// Função para desenhar borda de retângulo
+void gui_draw_rect(int x, int y, int w, int h, int color) {
+    asm { "DRAWRECT {x} {y} {w} {h} {color}" }
+}
+
+// Função para desenhar retângulo com cantos arredondados
+void gui_fill_round_rect(int x, int y, int w, int h, int radius, int color) {
+    asm { "FILLROUNDRECT {x} {y} {w} {h} {radius} {color}" }
+}
+
+// Função para desenhar linha
+void gui_draw_line(int x1, int y1, int x2, int y2, int color) {
+    asm { "DRAWLINE {x1} {y1} {x2} {y2} {color}" }
+}
+
+// Função para desenhar um caractere em coordenadas pixel
+void gui_draw_char(int x, int y, int ch, int fg, int bg) {
+    asm { "DRAWCHAR {x} {y} {ch} {fg} {bg}" }
+}
+
+// Função para desenhar string da RAM
+void gui_draw_string(int x, int y, *int str, int len, int fg, int bg) {
+    int addr = str;
+    asm { "DRAWTEXT {x} {y} {addr} {len} {fg} {bg}" }
+}
+
+// Função para atualizar a tela
+void gui_flip() {
+    asm { "UPDATEGUI" }
+}
+
+// Obtém posição do mouse
+int gui_mouse_x() {
+    int mx = 0;
+    asm { "GETMOUSEX {mx}" }
+    return mx;
+}
+
+int gui_mouse_y() {
+    int my = 0;
+    asm { "GETMOUSEY {my}" }
+    return my;
+}
+
+int gui_mouse_btn() {
+    int mb = 0;
+    asm { "GETMOUSEBTN {mb}" }
+    return mb;
+}
+
+// Verifica se ponto está dentro de retângulo
+int gui_point_in_rect(int px, int py, int rx, int ry, int rw, int rh) {
+    if (px >= rx && px < rx + rw) {
+        if (py >= ry && py < ry + rh) {
+            return 1;
+        }
+    }
+    return 0;
+}
