@@ -645,6 +645,7 @@ Set("v3", "Z")
 Set("v2", "v3")
 LoadPhys("A", "v2")
 RawLine("CLEARSCREEN A;")
+StorePhys("v2", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -679,6 +680,11 @@ LoadPhys("C", "v6")
 LoadPhys("D", "v5")
 LoadPhys("E", "v4")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v8", "A")
+StorePhys("v7", "B")
+StorePhys("v6", "C")
+StorePhys("v5", "D")
+StorePhys("v4", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -713,6 +719,11 @@ LoadPhys("C", "v11")
 LoadPhys("D", "v10")
 LoadPhys("E", "v9")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v13", "A")
+StorePhys("v12", "B")
+StorePhys("v11", "C")
+StorePhys("v10", "D")
+StorePhys("v9", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -753,6 +764,12 @@ LoadPhys("D", "v16")
 LoadPhys("E", "v15")
 LoadPhys("F", "v14")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v19", "A")
+StorePhys("v18", "B")
+StorePhys("v17", "C")
+StorePhys("v16", "D")
+StorePhys("v15", "E")
+StorePhys("v14", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -787,6 +804,11 @@ LoadPhys("C", "v22")
 LoadPhys("D", "v21")
 LoadPhys("E", "v20")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v24", "A")
+StorePhys("v23", "B")
+StorePhys("v22", "C")
+StorePhys("v21", "D")
+StorePhys("v20", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -821,6 +843,11 @@ LoadPhys("C", "v27")
 LoadPhys("D", "v26")
 LoadPhys("E", "v25")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v29", "A")
+StorePhys("v28", "B")
+StorePhys("v27", "C")
+StorePhys("v26", "D")
+StorePhys("v25", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -862,6 +889,12 @@ LoadPhys("D", "v32")
 LoadPhys("E", "v31")
 LoadPhys("F", "v30")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v35", "A")
+StorePhys("v34", "B")
+StorePhys("v36", "C")
+StorePhys("v32", "D")
+StorePhys("v31", "E")
+StorePhys("v30", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -872,6 +905,7 @@ Ret
 Set("v37", "0")
 LoadPhys("A", "v37")
 RawLine("GETMOUSEX A;")
+StorePhys("v37", "A")
 Set("Z", "v37")
 Ret
 Ret
@@ -880,6 +914,7 @@ Ret
 Set("v38", "0")
 LoadPhys("A", "v38")
 RawLine("GETMOUSEY A;")
+StorePhys("v38", "A")
 Set("Z", "v38")
 Ret
 Ret
@@ -888,6 +923,7 @@ Ret
 Set("v39", "0")
 LoadPhys("A", "v39")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v39", "A")
 Set("Z", "v39")
 Ret
 Ret
@@ -1000,6 +1036,7 @@ Set("v57", "Z")
 Set("v56", "v57")
 LoadPhys("A", "v56")
 RawLine("CLEARSCREEN A;")
+StorePhys("v56", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -1034,6 +1071,11 @@ LoadPhys("C", "v60")
 LoadPhys("D", "v59")
 LoadPhys("E", "v58")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v62", "A")
+StorePhys("v61", "B")
+StorePhys("v60", "C")
+StorePhys("v59", "D")
+StorePhys("v58", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -1068,6 +1110,11 @@ LoadPhys("C", "v65")
 LoadPhys("D", "v64")
 LoadPhys("E", "v63")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v67", "A")
+StorePhys("v66", "B")
+StorePhys("v65", "C")
+StorePhys("v64", "D")
+StorePhys("v63", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -1108,6 +1155,12 @@ LoadPhys("D", "v70")
 LoadPhys("E", "v69")
 LoadPhys("F", "v68")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v73", "A")
+StorePhys("v72", "B")
+StorePhys("v71", "C")
+StorePhys("v70", "D")
+StorePhys("v69", "E")
+StorePhys("v68", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -1142,6 +1195,11 @@ LoadPhys("C", "v76")
 LoadPhys("D", "v75")
 LoadPhys("E", "v74")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v78", "A")
+StorePhys("v77", "B")
+StorePhys("v76", "C")
+StorePhys("v75", "D")
+StorePhys("v74", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -1176,6 +1234,11 @@ LoadPhys("C", "v81")
 LoadPhys("D", "v80")
 LoadPhys("E", "v79")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v83", "A")
+StorePhys("v82", "B")
+StorePhys("v81", "C")
+StorePhys("v80", "D")
+StorePhys("v79", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -1217,6 +1280,12 @@ LoadPhys("D", "v86")
 LoadPhys("E", "v85")
 LoadPhys("F", "v84")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v89", "A")
+StorePhys("v88", "B")
+StorePhys("v90", "C")
+StorePhys("v86", "D")
+StorePhys("v85", "E")
+StorePhys("v84", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -1227,6 +1296,7 @@ Ret
 Set("v91", "0")
 LoadPhys("A", "v91")
 RawLine("GETMOUSEX A;")
+StorePhys("v91", "A")
 Set("Z", "v91")
 Ret
 Ret
@@ -1235,6 +1305,7 @@ Ret
 Set("v92", "0")
 LoadPhys("A", "v92")
 RawLine("GETMOUSEY A;")
+StorePhys("v92", "A")
 Set("Z", "v92")
 Ret
 Ret
@@ -1243,6 +1314,7 @@ Ret
 Set("v93", "0")
 LoadPhys("A", "v93")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v93", "A")
 Set("Z", "v93")
 Ret
 Ret
@@ -2144,6 +2216,7 @@ Ret
 Set("v184", "0")
 LoadPhys("A", "v184")
 In("A", "96")
+StorePhys("v184", "A")
 Set("v185", "0")
 Set("v186", "v184")
 Jgt("v184", "127", "cmp_true_373")
@@ -2350,6 +2423,7 @@ Set("v207", "Z")
 Set("v206", "v207")
 LoadPhys("A", "v206")
 RawLine("CLEARSCREEN A;")
+StorePhys("v206", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -2384,6 +2458,11 @@ LoadPhys("C", "v210")
 LoadPhys("D", "v209")
 LoadPhys("E", "v208")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v212", "A")
+StorePhys("v211", "B")
+StorePhys("v210", "C")
+StorePhys("v209", "D")
+StorePhys("v208", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -2418,6 +2497,11 @@ LoadPhys("C", "v215")
 LoadPhys("D", "v214")
 LoadPhys("E", "v213")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v217", "A")
+StorePhys("v216", "B")
+StorePhys("v215", "C")
+StorePhys("v214", "D")
+StorePhys("v213", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -2458,6 +2542,12 @@ LoadPhys("D", "v220")
 LoadPhys("E", "v219")
 LoadPhys("F", "v218")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v223", "A")
+StorePhys("v222", "B")
+StorePhys("v221", "C")
+StorePhys("v220", "D")
+StorePhys("v219", "E")
+StorePhys("v218", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -2492,6 +2582,11 @@ LoadPhys("C", "v226")
 LoadPhys("D", "v225")
 LoadPhys("E", "v224")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v228", "A")
+StorePhys("v227", "B")
+StorePhys("v226", "C")
+StorePhys("v225", "D")
+StorePhys("v224", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -2526,6 +2621,11 @@ LoadPhys("C", "v231")
 LoadPhys("D", "v230")
 LoadPhys("E", "v229")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v233", "A")
+StorePhys("v232", "B")
+StorePhys("v231", "C")
+StorePhys("v230", "D")
+StorePhys("v229", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -2567,6 +2667,12 @@ LoadPhys("D", "v236")
 LoadPhys("E", "v235")
 LoadPhys("F", "v234")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v239", "A")
+StorePhys("v238", "B")
+StorePhys("v240", "C")
+StorePhys("v236", "D")
+StorePhys("v235", "E")
+StorePhys("v234", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -2577,6 +2683,7 @@ Ret
 Set("v241", "0")
 LoadPhys("A", "v241")
 RawLine("GETMOUSEX A;")
+StorePhys("v241", "A")
 Set("Z", "v241")
 Ret
 Ret
@@ -2585,6 +2692,7 @@ Ret
 Set("v242", "0")
 LoadPhys("A", "v242")
 RawLine("GETMOUSEY A;")
+StorePhys("v242", "A")
 Set("Z", "v242")
 Ret
 Ret
@@ -2593,6 +2701,7 @@ Ret
 Set("v243", "0")
 LoadPhys("A", "v243")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v243", "A")
 Set("Z", "v243")
 Ret
 Ret
@@ -3216,6 +3325,7 @@ Set("v395", "Z")
 Set("v394", "v395")
 LoadPhys("A", "v394")
 RawLine("CLEARSCREEN A;")
+StorePhys("v394", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -3250,6 +3360,11 @@ LoadPhys("C", "v398")
 LoadPhys("D", "v397")
 LoadPhys("E", "v396")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v400", "A")
+StorePhys("v399", "B")
+StorePhys("v398", "C")
+StorePhys("v397", "D")
+StorePhys("v396", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -3284,6 +3399,11 @@ LoadPhys("C", "v403")
 LoadPhys("D", "v402")
 LoadPhys("E", "v401")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v405", "A")
+StorePhys("v404", "B")
+StorePhys("v403", "C")
+StorePhys("v402", "D")
+StorePhys("v401", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -3324,6 +3444,12 @@ LoadPhys("D", "v408")
 LoadPhys("E", "v407")
 LoadPhys("F", "v406")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v411", "A")
+StorePhys("v410", "B")
+StorePhys("v409", "C")
+StorePhys("v408", "D")
+StorePhys("v407", "E")
+StorePhys("v406", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -3358,6 +3484,11 @@ LoadPhys("C", "v414")
 LoadPhys("D", "v413")
 LoadPhys("E", "v412")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v416", "A")
+StorePhys("v415", "B")
+StorePhys("v414", "C")
+StorePhys("v413", "D")
+StorePhys("v412", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -3392,6 +3523,11 @@ LoadPhys("C", "v419")
 LoadPhys("D", "v418")
 LoadPhys("E", "v417")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v421", "A")
+StorePhys("v420", "B")
+StorePhys("v419", "C")
+StorePhys("v418", "D")
+StorePhys("v417", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -3433,6 +3569,12 @@ LoadPhys("D", "v424")
 LoadPhys("E", "v423")
 LoadPhys("F", "v422")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v427", "A")
+StorePhys("v426", "B")
+StorePhys("v428", "C")
+StorePhys("v424", "D")
+StorePhys("v423", "E")
+StorePhys("v422", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -3443,6 +3585,7 @@ Ret
 Set("v429", "0")
 LoadPhys("A", "v429")
 RawLine("GETMOUSEX A;")
+StorePhys("v429", "A")
 Set("Z", "v429")
 Ret
 Ret
@@ -3451,6 +3594,7 @@ Ret
 Set("v430", "0")
 LoadPhys("A", "v430")
 RawLine("GETMOUSEY A;")
+StorePhys("v430", "A")
 Set("Z", "v430")
 Ret
 Ret
@@ -3459,6 +3603,7 @@ Ret
 Set("v431", "0")
 LoadPhys("A", "v431")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v431", "A")
 Set("Z", "v431")
 Ret
 Ret
@@ -5583,6 +5728,7 @@ Set("v925", "Z")
 Set("v924", "v925")
 LoadPhys("A", "v924")
 RawLine("CLEARSCREEN A;")
+StorePhys("v924", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -5617,6 +5763,11 @@ LoadPhys("C", "v928")
 LoadPhys("D", "v927")
 LoadPhys("E", "v926")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v930", "A")
+StorePhys("v929", "B")
+StorePhys("v928", "C")
+StorePhys("v927", "D")
+StorePhys("v926", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -5651,6 +5802,11 @@ LoadPhys("C", "v933")
 LoadPhys("D", "v932")
 LoadPhys("E", "v931")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v935", "A")
+StorePhys("v934", "B")
+StorePhys("v933", "C")
+StorePhys("v932", "D")
+StorePhys("v931", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -5691,6 +5847,12 @@ LoadPhys("D", "v938")
 LoadPhys("E", "v937")
 LoadPhys("F", "v936")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v941", "A")
+StorePhys("v940", "B")
+StorePhys("v939", "C")
+StorePhys("v938", "D")
+StorePhys("v937", "E")
+StorePhys("v936", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -5725,6 +5887,11 @@ LoadPhys("C", "v944")
 LoadPhys("D", "v943")
 LoadPhys("E", "v942")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v946", "A")
+StorePhys("v945", "B")
+StorePhys("v944", "C")
+StorePhys("v943", "D")
+StorePhys("v942", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -5759,6 +5926,11 @@ LoadPhys("C", "v949")
 LoadPhys("D", "v948")
 LoadPhys("E", "v947")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v951", "A")
+StorePhys("v950", "B")
+StorePhys("v949", "C")
+StorePhys("v948", "D")
+StorePhys("v947", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -5800,6 +5972,12 @@ LoadPhys("D", "v954")
 LoadPhys("E", "v953")
 LoadPhys("F", "v952")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v957", "A")
+StorePhys("v956", "B")
+StorePhys("v958", "C")
+StorePhys("v954", "D")
+StorePhys("v953", "E")
+StorePhys("v952", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -5810,6 +5988,7 @@ Ret
 Set("v959", "0")
 LoadPhys("A", "v959")
 RawLine("GETMOUSEX A;")
+StorePhys("v959", "A")
 Set("Z", "v959")
 Ret
 Ret
@@ -5818,6 +5997,7 @@ Ret
 Set("v960", "0")
 LoadPhys("A", "v960")
 RawLine("GETMOUSEY A;")
+StorePhys("v960", "A")
 Set("Z", "v960")
 Ret
 Ret
@@ -5826,6 +6006,7 @@ Ret
 Set("v961", "0")
 LoadPhys("A", "v961")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v961", "A")
 Set("Z", "v961")
 Ret
 Ret
@@ -5938,6 +6119,7 @@ Set("v979", "Z")
 Set("v978", "v979")
 LoadPhys("A", "v978")
 RawLine("CLEARSCREEN A;")
+StorePhys("v978", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -5972,6 +6154,11 @@ LoadPhys("C", "v982")
 LoadPhys("D", "v981")
 LoadPhys("E", "v980")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v984", "A")
+StorePhys("v983", "B")
+StorePhys("v982", "C")
+StorePhys("v981", "D")
+StorePhys("v980", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -6006,6 +6193,11 @@ LoadPhys("C", "v987")
 LoadPhys("D", "v986")
 LoadPhys("E", "v985")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v989", "A")
+StorePhys("v988", "B")
+StorePhys("v987", "C")
+StorePhys("v986", "D")
+StorePhys("v985", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -6046,6 +6238,12 @@ LoadPhys("D", "v992")
 LoadPhys("E", "v991")
 LoadPhys("F", "v990")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v995", "A")
+StorePhys("v994", "B")
+StorePhys("v993", "C")
+StorePhys("v992", "D")
+StorePhys("v991", "E")
+StorePhys("v990", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -6080,6 +6278,11 @@ LoadPhys("C", "v998")
 LoadPhys("D", "v997")
 LoadPhys("E", "v996")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v1000", "A")
+StorePhys("v999", "B")
+StorePhys("v998", "C")
+StorePhys("v997", "D")
+StorePhys("v996", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -6114,6 +6317,11 @@ LoadPhys("C", "v1003")
 LoadPhys("D", "v1002")
 LoadPhys("E", "v1001")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v1005", "A")
+StorePhys("v1004", "B")
+StorePhys("v1003", "C")
+StorePhys("v1002", "D")
+StorePhys("v1001", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -6155,6 +6363,12 @@ LoadPhys("D", "v1008")
 LoadPhys("E", "v1007")
 LoadPhys("F", "v1006")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v1011", "A")
+StorePhys("v1010", "B")
+StorePhys("v1012", "C")
+StorePhys("v1008", "D")
+StorePhys("v1007", "E")
+StorePhys("v1006", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -6165,6 +6379,7 @@ Ret
 Set("v1013", "0")
 LoadPhys("A", "v1013")
 RawLine("GETMOUSEX A;")
+StorePhys("v1013", "A")
 Set("Z", "v1013")
 Ret
 Ret
@@ -6173,6 +6388,7 @@ Ret
 Set("v1014", "0")
 LoadPhys("A", "v1014")
 RawLine("GETMOUSEY A;")
+StorePhys("v1014", "A")
 Set("Z", "v1014")
 Ret
 Ret
@@ -6181,6 +6397,7 @@ Ret
 Set("v1015", "0")
 LoadPhys("A", "v1015")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v1015", "A")
 Set("Z", "v1015")
 Ret
 Ret
@@ -9609,6 +9826,7 @@ Set("v1720", "Z")
 Set("v1719", "v1720")
 LoadPhys("A", "v1719")
 RawLine("CLEARSCREEN A;")
+StorePhys("v1719", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -9643,6 +9861,11 @@ LoadPhys("C", "v1723")
 LoadPhys("D", "v1722")
 LoadPhys("E", "v1721")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v1725", "A")
+StorePhys("v1724", "B")
+StorePhys("v1723", "C")
+StorePhys("v1722", "D")
+StorePhys("v1721", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -9677,6 +9900,11 @@ LoadPhys("C", "v1728")
 LoadPhys("D", "v1727")
 LoadPhys("E", "v1726")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v1730", "A")
+StorePhys("v1729", "B")
+StorePhys("v1728", "C")
+StorePhys("v1727", "D")
+StorePhys("v1726", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -9717,6 +9945,12 @@ LoadPhys("D", "v1733")
 LoadPhys("E", "v1732")
 LoadPhys("F", "v1731")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v1736", "A")
+StorePhys("v1735", "B")
+StorePhys("v1734", "C")
+StorePhys("v1733", "D")
+StorePhys("v1732", "E")
+StorePhys("v1731", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -9751,6 +9985,11 @@ LoadPhys("C", "v1739")
 LoadPhys("D", "v1738")
 LoadPhys("E", "v1737")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v1741", "A")
+StorePhys("v1740", "B")
+StorePhys("v1739", "C")
+StorePhys("v1738", "D")
+StorePhys("v1737", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -9785,6 +10024,11 @@ LoadPhys("C", "v1744")
 LoadPhys("D", "v1743")
 LoadPhys("E", "v1742")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v1746", "A")
+StorePhys("v1745", "B")
+StorePhys("v1744", "C")
+StorePhys("v1743", "D")
+StorePhys("v1742", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -9826,6 +10070,12 @@ LoadPhys("D", "v1749")
 LoadPhys("E", "v1748")
 LoadPhys("F", "v1747")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v1752", "A")
+StorePhys("v1751", "B")
+StorePhys("v1753", "C")
+StorePhys("v1749", "D")
+StorePhys("v1748", "E")
+StorePhys("v1747", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -9836,6 +10086,7 @@ Ret
 Set("v1754", "0")
 LoadPhys("A", "v1754")
 RawLine("GETMOUSEX A;")
+StorePhys("v1754", "A")
 Set("Z", "v1754")
 Ret
 Ret
@@ -9844,6 +10095,7 @@ Ret
 Set("v1755", "0")
 LoadPhys("A", "v1755")
 RawLine("GETMOUSEY A;")
+StorePhys("v1755", "A")
 Set("Z", "v1755")
 Ret
 Ret
@@ -9852,6 +10104,7 @@ Ret
 Set("v1756", "0")
 LoadPhys("A", "v1756")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v1756", "A")
 Set("Z", "v1756")
 Ret
 Ret
@@ -10947,6 +11200,7 @@ Set("v1929", "Z")
 Set("v1928", "v1929")
 LoadPhys("A", "v1928")
 RawLine("CLEARSCREEN A;")
+StorePhys("v1928", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -10981,6 +11235,11 @@ LoadPhys("C", "v1932")
 LoadPhys("D", "v1931")
 LoadPhys("E", "v1930")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v1934", "A")
+StorePhys("v1933", "B")
+StorePhys("v1932", "C")
+StorePhys("v1931", "D")
+StorePhys("v1930", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -11015,6 +11274,11 @@ LoadPhys("C", "v1937")
 LoadPhys("D", "v1936")
 LoadPhys("E", "v1935")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v1939", "A")
+StorePhys("v1938", "B")
+StorePhys("v1937", "C")
+StorePhys("v1936", "D")
+StorePhys("v1935", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -11055,6 +11319,12 @@ LoadPhys("D", "v1942")
 LoadPhys("E", "v1941")
 LoadPhys("F", "v1940")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v1945", "A")
+StorePhys("v1944", "B")
+StorePhys("v1943", "C")
+StorePhys("v1942", "D")
+StorePhys("v1941", "E")
+StorePhys("v1940", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -11089,6 +11359,11 @@ LoadPhys("C", "v1948")
 LoadPhys("D", "v1947")
 LoadPhys("E", "v1946")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v1950", "A")
+StorePhys("v1949", "B")
+StorePhys("v1948", "C")
+StorePhys("v1947", "D")
+StorePhys("v1946", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -11123,6 +11398,11 @@ LoadPhys("C", "v1953")
 LoadPhys("D", "v1952")
 LoadPhys("E", "v1951")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v1955", "A")
+StorePhys("v1954", "B")
+StorePhys("v1953", "C")
+StorePhys("v1952", "D")
+StorePhys("v1951", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -11164,6 +11444,12 @@ LoadPhys("D", "v1958")
 LoadPhys("E", "v1957")
 LoadPhys("F", "v1956")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v1961", "A")
+StorePhys("v1960", "B")
+StorePhys("v1962", "C")
+StorePhys("v1958", "D")
+StorePhys("v1957", "E")
+StorePhys("v1956", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -11174,6 +11460,7 @@ Ret
 Set("v1963", "0")
 LoadPhys("A", "v1963")
 RawLine("GETMOUSEX A;")
+StorePhys("v1963", "A")
 Set("Z", "v1963")
 Ret
 Ret
@@ -11182,6 +11469,7 @@ Ret
 Set("v1964", "0")
 LoadPhys("A", "v1964")
 RawLine("GETMOUSEY A;")
+StorePhys("v1964", "A")
 Set("Z", "v1964")
 Ret
 Ret
@@ -11190,6 +11478,7 @@ Ret
 Set("v1965", "0")
 LoadPhys("A", "v1965")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v1965", "A")
 Set("Z", "v1965")
 Ret
 Ret
@@ -11302,6 +11591,7 @@ Set("v1983", "Z")
 Set("v1982", "v1983")
 LoadPhys("A", "v1982")
 RawLine("CLEARSCREEN A;")
+StorePhys("v1982", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -11336,6 +11626,11 @@ LoadPhys("C", "v1986")
 LoadPhys("D", "v1985")
 LoadPhys("E", "v1984")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v1988", "A")
+StorePhys("v1987", "B")
+StorePhys("v1986", "C")
+StorePhys("v1985", "D")
+StorePhys("v1984", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -11370,6 +11665,11 @@ LoadPhys("C", "v1991")
 LoadPhys("D", "v1990")
 LoadPhys("E", "v1989")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v1993", "A")
+StorePhys("v1992", "B")
+StorePhys("v1991", "C")
+StorePhys("v1990", "D")
+StorePhys("v1989", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -11410,6 +11710,12 @@ LoadPhys("D", "v1996")
 LoadPhys("E", "v1995")
 LoadPhys("F", "v1994")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v1999", "A")
+StorePhys("v1998", "B")
+StorePhys("v1997", "C")
+StorePhys("v1996", "D")
+StorePhys("v1995", "E")
+StorePhys("v1994", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -11444,6 +11750,11 @@ LoadPhys("C", "v2002")
 LoadPhys("D", "v2001")
 LoadPhys("E", "v2000")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v2004", "A")
+StorePhys("v2003", "B")
+StorePhys("v2002", "C")
+StorePhys("v2001", "D")
+StorePhys("v2000", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -11478,6 +11789,11 @@ LoadPhys("C", "v2007")
 LoadPhys("D", "v2006")
 LoadPhys("E", "v2005")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v2009", "A")
+StorePhys("v2008", "B")
+StorePhys("v2007", "C")
+StorePhys("v2006", "D")
+StorePhys("v2005", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -11519,6 +11835,12 @@ LoadPhys("D", "v2012")
 LoadPhys("E", "v2011")
 LoadPhys("F", "v2010")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v2015", "A")
+StorePhys("v2014", "B")
+StorePhys("v2016", "C")
+StorePhys("v2012", "D")
+StorePhys("v2011", "E")
+StorePhys("v2010", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -11529,6 +11851,7 @@ Ret
 Set("v2017", "0")
 LoadPhys("A", "v2017")
 RawLine("GETMOUSEX A;")
+StorePhys("v2017", "A")
 Set("Z", "v2017")
 Ret
 Ret
@@ -11537,6 +11860,7 @@ Ret
 Set("v2018", "0")
 LoadPhys("A", "v2018")
 RawLine("GETMOUSEY A;")
+StorePhys("v2018", "A")
 Set("Z", "v2018")
 Ret
 Ret
@@ -11545,6 +11869,7 @@ Ret
 Set("v2019", "0")
 LoadPhys("A", "v2019")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v2019", "A")
 Set("Z", "v2019")
 Ret
 Ret
@@ -12446,6 +12771,7 @@ Ret
 Set("v2110", "0")
 LoadPhys("A", "v2110")
 In("A", "96")
+StorePhys("v2110", "A")
 Set("v2111", "0")
 Set("v2112", "v2110")
 Jgt("v2110", "127", "cmp_true_2996")
@@ -12652,6 +12978,7 @@ Set("v2133", "Z")
 Set("v2132", "v2133")
 LoadPhys("A", "v2132")
 RawLine("CLEARSCREEN A;")
+StorePhys("v2132", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -12686,6 +13013,11 @@ LoadPhys("C", "v2136")
 LoadPhys("D", "v2135")
 LoadPhys("E", "v2134")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v2138", "A")
+StorePhys("v2137", "B")
+StorePhys("v2136", "C")
+StorePhys("v2135", "D")
+StorePhys("v2134", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -12720,6 +13052,11 @@ LoadPhys("C", "v2141")
 LoadPhys("D", "v2140")
 LoadPhys("E", "v2139")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v2143", "A")
+StorePhys("v2142", "B")
+StorePhys("v2141", "C")
+StorePhys("v2140", "D")
+StorePhys("v2139", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -12760,6 +13097,12 @@ LoadPhys("D", "v2146")
 LoadPhys("E", "v2145")
 LoadPhys("F", "v2144")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v2149", "A")
+StorePhys("v2148", "B")
+StorePhys("v2147", "C")
+StorePhys("v2146", "D")
+StorePhys("v2145", "E")
+StorePhys("v2144", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -12794,6 +13137,11 @@ LoadPhys("C", "v2152")
 LoadPhys("D", "v2151")
 LoadPhys("E", "v2150")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v2154", "A")
+StorePhys("v2153", "B")
+StorePhys("v2152", "C")
+StorePhys("v2151", "D")
+StorePhys("v2150", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -12828,6 +13176,11 @@ LoadPhys("C", "v2157")
 LoadPhys("D", "v2156")
 LoadPhys("E", "v2155")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v2159", "A")
+StorePhys("v2158", "B")
+StorePhys("v2157", "C")
+StorePhys("v2156", "D")
+StorePhys("v2155", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -12869,6 +13222,12 @@ LoadPhys("D", "v2162")
 LoadPhys("E", "v2161")
 LoadPhys("F", "v2160")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v2165", "A")
+StorePhys("v2164", "B")
+StorePhys("v2166", "C")
+StorePhys("v2162", "D")
+StorePhys("v2161", "E")
+StorePhys("v2160", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -12879,6 +13238,7 @@ Ret
 Set("v2167", "0")
 LoadPhys("A", "v2167")
 RawLine("GETMOUSEX A;")
+StorePhys("v2167", "A")
 Set("Z", "v2167")
 Ret
 Ret
@@ -12887,6 +13247,7 @@ Ret
 Set("v2168", "0")
 LoadPhys("A", "v2168")
 RawLine("GETMOUSEY A;")
+StorePhys("v2168", "A")
 Set("Z", "v2168")
 Ret
 Ret
@@ -12895,6 +13256,7 @@ Ret
 Set("v2169", "0")
 LoadPhys("A", "v2169")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v2169", "A")
 Set("Z", "v2169")
 Ret
 Ret
@@ -14084,6 +14446,7 @@ Label("for_end_3432")
 Set("v2453", "0")
 LoadPhys("A", "v2453")
 In("A", "980")
+StorePhys("v2453", "A")
 Set("v2454", "v2453")
 Div("v2454", "30")
 Set("v2455", "v2454")
@@ -15229,6 +15592,7 @@ Set("v2746", "Z")
 Set("v2745", "v2746")
 LoadPhys("A", "v2745")
 RawLine("CLEARSCREEN A;")
+StorePhys("v2745", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -15263,6 +15627,11 @@ LoadPhys("C", "v2749")
 LoadPhys("D", "v2748")
 LoadPhys("E", "v2747")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v2751", "A")
+StorePhys("v2750", "B")
+StorePhys("v2749", "C")
+StorePhys("v2748", "D")
+StorePhys("v2747", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -15297,6 +15666,11 @@ LoadPhys("C", "v2754")
 LoadPhys("D", "v2753")
 LoadPhys("E", "v2752")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v2756", "A")
+StorePhys("v2755", "B")
+StorePhys("v2754", "C")
+StorePhys("v2753", "D")
+StorePhys("v2752", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -15337,6 +15711,12 @@ LoadPhys("D", "v2759")
 LoadPhys("E", "v2758")
 LoadPhys("F", "v2757")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v2762", "A")
+StorePhys("v2761", "B")
+StorePhys("v2760", "C")
+StorePhys("v2759", "D")
+StorePhys("v2758", "E")
+StorePhys("v2757", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -15371,6 +15751,11 @@ LoadPhys("C", "v2765")
 LoadPhys("D", "v2764")
 LoadPhys("E", "v2763")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v2767", "A")
+StorePhys("v2766", "B")
+StorePhys("v2765", "C")
+StorePhys("v2764", "D")
+StorePhys("v2763", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -15405,6 +15790,11 @@ LoadPhys("C", "v2770")
 LoadPhys("D", "v2769")
 LoadPhys("E", "v2768")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v2772", "A")
+StorePhys("v2771", "B")
+StorePhys("v2770", "C")
+StorePhys("v2769", "D")
+StorePhys("v2768", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -15446,6 +15836,12 @@ LoadPhys("D", "v2775")
 LoadPhys("E", "v2774")
 LoadPhys("F", "v2773")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v2778", "A")
+StorePhys("v2777", "B")
+StorePhys("v2779", "C")
+StorePhys("v2775", "D")
+StorePhys("v2774", "E")
+StorePhys("v2773", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -15456,6 +15852,7 @@ Ret
 Set("v2780", "0")
 LoadPhys("A", "v2780")
 RawLine("GETMOUSEX A;")
+StorePhys("v2780", "A")
 Set("Z", "v2780")
 Ret
 Ret
@@ -15464,6 +15861,7 @@ Ret
 Set("v2781", "0")
 LoadPhys("A", "v2781")
 RawLine("GETMOUSEY A;")
+StorePhys("v2781", "A")
 Set("Z", "v2781")
 Ret
 Ret
@@ -15472,6 +15870,7 @@ Ret
 Set("v2782", "0")
 LoadPhys("A", "v2782")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v2782", "A")
 Set("Z", "v2782")
 Ret
 Ret
@@ -16672,6 +17071,7 @@ Label("for_end_4093")
 Set("v2986", "0")
 LoadPhys("A", "v2986")
 In("A", "980")
+StorePhys("v2986", "A")
 Set("v2987", "v2986")
 Div("v2987", "30")
 Set("v2988", "v2987")
@@ -17001,6 +17401,7 @@ Set("v3035", "Z")
 Set("v3034", "v3035")
 LoadPhys("A", "v3034")
 RawLine("CLEARSCREEN A;")
+StorePhys("v3034", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -17035,6 +17436,11 @@ LoadPhys("C", "v3038")
 LoadPhys("D", "v3037")
 LoadPhys("E", "v3036")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v3040", "A")
+StorePhys("v3039", "B")
+StorePhys("v3038", "C")
+StorePhys("v3037", "D")
+StorePhys("v3036", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -17069,6 +17475,11 @@ LoadPhys("C", "v3043")
 LoadPhys("D", "v3042")
 LoadPhys("E", "v3041")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v3045", "A")
+StorePhys("v3044", "B")
+StorePhys("v3043", "C")
+StorePhys("v3042", "D")
+StorePhys("v3041", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -17109,6 +17520,12 @@ LoadPhys("D", "v3048")
 LoadPhys("E", "v3047")
 LoadPhys("F", "v3046")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v3051", "A")
+StorePhys("v3050", "B")
+StorePhys("v3049", "C")
+StorePhys("v3048", "D")
+StorePhys("v3047", "E")
+StorePhys("v3046", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -17143,6 +17560,11 @@ LoadPhys("C", "v3054")
 LoadPhys("D", "v3053")
 LoadPhys("E", "v3052")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v3056", "A")
+StorePhys("v3055", "B")
+StorePhys("v3054", "C")
+StorePhys("v3053", "D")
+StorePhys("v3052", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -17177,6 +17599,11 @@ LoadPhys("C", "v3059")
 LoadPhys("D", "v3058")
 LoadPhys("E", "v3057")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v3061", "A")
+StorePhys("v3060", "B")
+StorePhys("v3059", "C")
+StorePhys("v3058", "D")
+StorePhys("v3057", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -17218,6 +17645,12 @@ LoadPhys("D", "v3064")
 LoadPhys("E", "v3063")
 LoadPhys("F", "v3062")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v3067", "A")
+StorePhys("v3066", "B")
+StorePhys("v3068", "C")
+StorePhys("v3064", "D")
+StorePhys("v3063", "E")
+StorePhys("v3062", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -17228,6 +17661,7 @@ Ret
 Set("v3069", "0")
 LoadPhys("A", "v3069")
 RawLine("GETMOUSEX A;")
+StorePhys("v3069", "A")
 Set("Z", "v3069")
 Ret
 Ret
@@ -17236,6 +17670,7 @@ Ret
 Set("v3070", "0")
 LoadPhys("A", "v3070")
 RawLine("GETMOUSEY A;")
+StorePhys("v3070", "A")
 Set("Z", "v3070")
 Ret
 Ret
@@ -17244,6 +17679,7 @@ Ret
 Set("v3071", "0")
 LoadPhys("A", "v3071")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v3071", "A")
 Set("Z", "v3071")
 Ret
 Ret
@@ -19176,6 +19612,7 @@ Set("v3433", "Z")
 Set("v3432", "v3433")
 LoadPhys("A", "v3432")
 RawLine("CLEARSCREEN A;")
+StorePhys("v3432", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -19210,6 +19647,11 @@ LoadPhys("C", "v3436")
 LoadPhys("D", "v3435")
 LoadPhys("E", "v3434")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v3438", "A")
+StorePhys("v3437", "B")
+StorePhys("v3436", "C")
+StorePhys("v3435", "D")
+StorePhys("v3434", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -19244,6 +19686,11 @@ LoadPhys("C", "v3441")
 LoadPhys("D", "v3440")
 LoadPhys("E", "v3439")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v3443", "A")
+StorePhys("v3442", "B")
+StorePhys("v3441", "C")
+StorePhys("v3440", "D")
+StorePhys("v3439", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -19284,6 +19731,12 @@ LoadPhys("D", "v3446")
 LoadPhys("E", "v3445")
 LoadPhys("F", "v3444")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v3449", "A")
+StorePhys("v3448", "B")
+StorePhys("v3447", "C")
+StorePhys("v3446", "D")
+StorePhys("v3445", "E")
+StorePhys("v3444", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -19318,6 +19771,11 @@ LoadPhys("C", "v3452")
 LoadPhys("D", "v3451")
 LoadPhys("E", "v3450")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v3454", "A")
+StorePhys("v3453", "B")
+StorePhys("v3452", "C")
+StorePhys("v3451", "D")
+StorePhys("v3450", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -19352,6 +19810,11 @@ LoadPhys("C", "v3457")
 LoadPhys("D", "v3456")
 LoadPhys("E", "v3455")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v3459", "A")
+StorePhys("v3458", "B")
+StorePhys("v3457", "C")
+StorePhys("v3456", "D")
+StorePhys("v3455", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -19393,6 +19856,12 @@ LoadPhys("D", "v3462")
 LoadPhys("E", "v3461")
 LoadPhys("F", "v3460")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v3465", "A")
+StorePhys("v3464", "B")
+StorePhys("v3466", "C")
+StorePhys("v3462", "D")
+StorePhys("v3461", "E")
+StorePhys("v3460", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -19403,6 +19872,7 @@ Ret
 Set("v3467", "0")
 LoadPhys("A", "v3467")
 RawLine("GETMOUSEX A;")
+StorePhys("v3467", "A")
 Set("Z", "v3467")
 Ret
 Ret
@@ -19411,6 +19881,7 @@ Ret
 Set("v3468", "0")
 LoadPhys("A", "v3468")
 RawLine("GETMOUSEY A;")
+StorePhys("v3468", "A")
 Set("Z", "v3468")
 Ret
 Ret
@@ -19419,6 +19890,7 @@ Ret
 Set("v3469", "0")
 LoadPhys("A", "v3469")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v3469", "A")
 Set("Z", "v3469")
 Ret
 Ret
@@ -19531,6 +20003,7 @@ Set("v3487", "Z")
 Set("v3486", "v3487")
 LoadPhys("A", "v3486")
 RawLine("CLEARSCREEN A;")
+StorePhys("v3486", "A")
 Ret
 
 --- FUNC gui_fill_rect ---
@@ -19565,6 +20038,11 @@ LoadPhys("C", "v3490")
 LoadPhys("D", "v3489")
 LoadPhys("E", "v3488")
 RawLine("FILLRECT A B C D E;")
+StorePhys("v3492", "A")
+StorePhys("v3491", "B")
+StorePhys("v3490", "C")
+StorePhys("v3489", "D")
+StorePhys("v3488", "E")
 Ret
 
 --- FUNC gui_draw_rect ---
@@ -19599,6 +20077,11 @@ LoadPhys("C", "v3495")
 LoadPhys("D", "v3494")
 LoadPhys("E", "v3493")
 RawLine("DRAWRECT A B C D E;")
+StorePhys("v3497", "A")
+StorePhys("v3496", "B")
+StorePhys("v3495", "C")
+StorePhys("v3494", "D")
+StorePhys("v3493", "E")
 Ret
 
 --- FUNC gui_fill_round_rect ---
@@ -19639,6 +20122,12 @@ LoadPhys("D", "v3500")
 LoadPhys("E", "v3499")
 LoadPhys("F", "v3498")
 RawLine("FILLROUNDRECT A B C D E F;")
+StorePhys("v3503", "A")
+StorePhys("v3502", "B")
+StorePhys("v3501", "C")
+StorePhys("v3500", "D")
+StorePhys("v3499", "E")
+StorePhys("v3498", "F")
 Ret
 
 --- FUNC gui_draw_line ---
@@ -19673,6 +20162,11 @@ LoadPhys("C", "v3506")
 LoadPhys("D", "v3505")
 LoadPhys("E", "v3504")
 RawLine("DRAWLINE A B C D E;")
+StorePhys("v3508", "A")
+StorePhys("v3507", "B")
+StorePhys("v3506", "C")
+StorePhys("v3505", "D")
+StorePhys("v3504", "E")
 Ret
 
 --- FUNC gui_draw_char ---
@@ -19707,6 +20201,11 @@ LoadPhys("C", "v3511")
 LoadPhys("D", "v3510")
 LoadPhys("E", "v3509")
 RawLine("DRAWCHAR A B C D E;")
+StorePhys("v3513", "A")
+StorePhys("v3512", "B")
+StorePhys("v3511", "C")
+StorePhys("v3510", "D")
+StorePhys("v3509", "E")
 Ret
 
 --- FUNC gui_draw_string ---
@@ -19748,6 +20247,12 @@ LoadPhys("D", "v3516")
 LoadPhys("E", "v3515")
 LoadPhys("F", "v3514")
 RawLine("DRAWTEXT A B C D E F;")
+StorePhys("v3519", "A")
+StorePhys("v3518", "B")
+StorePhys("v3520", "C")
+StorePhys("v3516", "D")
+StorePhys("v3515", "E")
+StorePhys("v3514", "F")
 Ret
 
 --- FUNC gui_flip ---
@@ -19758,6 +20263,7 @@ Ret
 Set("v3521", "0")
 LoadPhys("A", "v3521")
 RawLine("GETMOUSEX A;")
+StorePhys("v3521", "A")
 Set("Z", "v3521")
 Ret
 Ret
@@ -19766,6 +20272,7 @@ Ret
 Set("v3522", "0")
 LoadPhys("A", "v3522")
 RawLine("GETMOUSEY A;")
+StorePhys("v3522", "A")
 Set("Z", "v3522")
 Ret
 Ret
@@ -19774,6 +20281,7 @@ Ret
 Set("v3523", "0")
 LoadPhys("A", "v3523")
 RawLine("GETMOUSEBTN A;")
+StorePhys("v3523", "A")
 Set("Z", "v3523")
 Ret
 Ret
@@ -21625,12 +22133,14 @@ Set("g523", "v3914")
 RawLine("SET Z 523;")
 RawLine("LOAD A, Z;")
 Out("980", "A")
+StorePhys("g523", "A")
 Ret
 
 --- FUNC keyboard_interrupt_handler_main ---
 Set("v3915", "0")
 LoadPhys("A", "v3915")
 In("A", "96")
+StorePhys("v3915", "A")
 Set("v3916", "0")
 Set("v3917", "v3915")
 Jgt("v3915", "127", "cmp_true_5287")
